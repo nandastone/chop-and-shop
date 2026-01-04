@@ -206,20 +206,21 @@
     text-transform: uppercase !important;
   }
 
-  /* Items container - items flow inline. */
+  /* Items container - use flex for 2 columns. */
   .print-list .space-y-1 {
-    display: block !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 190mm !important;
   }
 
-  /* Items flow as inline-blocks for 2-column layout. */
+  /* Items in 2-column layout with fixed width. */
   .print-item {
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
     gap: 1.5mm !important;
-    width: 48% !important;
-    padding: 0.5mm 0 !important;
+    width: 90mm !important;
+    padding: 0.5mm 1mm !important;
     font-size: 10px !important;
-    vertical-align: top !important;
     box-sizing: border-box !important;
   }
 
