@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { Plus, Store, Pencil, Trash2, X, Check } from "lucide-react";
+import { Plus, Store, Pencil, Trash2, X, Check, Package } from "lucide-react";
 import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -13,6 +13,20 @@ export const Route = createFileRoute("/stores")({
 
 function StoresPage() {
   const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
+  const { data: ingredients } = useSuspenseQuery(
+    convexQuery(api.ingredients.list, {})
+  );
+
+  // Count ingredients per store.
+  const ingredientCountByStore = new Map<string, number>();
+  for (const ing of ingredients) {
+    if (ing.storeId) {
+      ingredientCountByStore.set(
+        ing.storeId,
+        (ingredientCountByStore.get(ing.storeId) || 0) + 1
+      );
+    }
+  }
 
   const createStore = useMutation(api.stores.create);
   const updateStore = useMutation(api.stores.update);
@@ -135,14 +149,14 @@ function StoresPage() {
             Drag to reorder. Shopping list items will be grouped by store in this order.
           </p>
           {stores.map((store, index) => (
-            <div key={store._id} className="card">
+            <div key={store._id}>
               {editingStore?.id === store._id ? (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     handleUpdateStore();
                   }}
-                  className="flex items-center gap-2"
+                  className="card flex items-center gap-2"
                 >
                   <input
                     type="text"
@@ -168,10 +182,20 @@ function StoresPage() {
                   </button>
                 </form>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col gap-0.5">
+                <Link
+                  to="/ingredients"
+                  search={{ store: store._id }}
+                  className="card flex items-center gap-3 hover:bg-stone-50 transition-colors"
+                >
+                  <div
+                    className="flex flex-col gap-0.5"
+                    onClick={(e) => e.preventDefault()}
+                  >
                     <button
-                      onClick={() => handleMoveUp(index)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleMoveUp(index);
+                      }}
                       disabled={index === 0}
                       className="p-1 text-stone-300 hover:text-stone-500 disabled:opacity-30"
                     >
@@ -190,7 +214,10 @@ function StoresPage() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleMoveDown(index)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleMoveDown(index);
+                      }}
                       disabled={index === stores.length - 1}
                       className="p-1 text-stone-300 hover:text-stone-500 disabled:opacity-30"
                     >
@@ -212,24 +239,39 @@ function StoresPage() {
                   <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center">
                     <Store className="w-5 h-5 text-coral-500" />
                   </div>
-                  <span className="flex-1 font-medium text-stone-700">
-                    {store.name}
-                  </span>
+                  <div className="flex-1">
+                    <span className="font-medium text-stone-700">
+                      {store.name}
+                    </span>
+                    {(ingredientCountByStore.get(store._id) || 0) > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-stone-400 mt-0.5">
+                        <Package className="w-3 h-3" />
+                        <span>
+                          {ingredientCountByStore.get(store._id)} ingredient
+                          {ingredientCountByStore.get(store._id) !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <button
-                    onClick={() =>
-                      setEditingStore({ id: store._id, name: store.name })
-                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setEditingStore({ id: store._id, name: store.name });
+                    }}
                     className="p-2 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setDeleteConfirm(store._id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setDeleteConfirm(store._id);
+                    }}
                     className="p-2 rounded-xl text-stone-400 hover:text-red-500 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </div>
+                </Link>
               )}
             </div>
           ))}

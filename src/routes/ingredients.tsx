@@ -1,18 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
 import { Plus, Search, Pencil, Trash2, X, Package } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/ingredients")({
   component: IngredientsPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    store: (search.store as string) || undefined,
+  }),
 });
 
 function IngredientsPage() {
+  const { store: storeFilter } = Route.useSearch();
+  const navigate = useNavigate();
+
   const { data: ingredients } = useSuspenseQuery(
     convexQuery(api.ingredients.list, {})
   );
@@ -27,6 +33,28 @@ function IngredientsPage() {
   const addToList = useMutation(api.shoppingList.addManualIngredient);
 
   const [search, setSearch] = useState("");
+
+  const setStoreFilter = (store: string | undefined) => {
+    navigate({
+      to: "/ingredients",
+      search: store ? { store } : {},
+      replace: true,
+    });
+  };
+
+  const selectedChipRef = useRef<HTMLButtonElement>(null);
+
+  // Scroll selected chip into view.
+  useEffect(() => {
+    if (storeFilter && selectedChipRef.current) {
+      selectedChipRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [storeFilter]);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<{
     id: Id<"ingredients">;
@@ -49,8 +77,28 @@ function IngredientsPage() {
   );
 
   const filteredIngredients = ingredients
-    .filter((ing) => ing.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((ing) => {
+      // Filter by search.
+      if (search && !ing.name.toLowerCase().includes(search.toLowerCase())) {
+        return false;
+      }
+      // Filter by store.
+      if (storeFilter === "none") {
+        return !ing.storeId;
+      }
+      if (storeFilter && ing.storeId !== storeFilter) {
+        return false;
+      }
+      return true;
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Count ingredients per store for filter chips.
+  const ingredientCountByStore = new Map<string | null, number>();
+  for (const ing of ingredients) {
+    const key = ing.storeId || null;
+    ingredientCountByStore.set(key, (ingredientCountByStore.get(key) || 0) + 1);
+  }
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -124,7 +172,7 @@ function IngredientsPage() {
       </div>
 
       {/* Search. */}
-      <div className="relative mb-4">
+      <div className="relative mb-3">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
         <input
           type="text"
@@ -133,6 +181,52 @@ function IngredientsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="input pl-10"
         />
+      </div>
+
+      {/* Store filter chips. */}
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-4 px-4">
+        <button
+          onClick={() => setStoreFilter(undefined)}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            !storeFilter
+              ? "bg-coral-500 text-white"
+              : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+          }`}
+        >
+          All ({ingredients.length})
+        </button>
+        {stores.map((store) => {
+          const count = ingredientCountByStore.get(store._id) || 0;
+          if (count === 0) return null;
+          const isSelected = storeFilter === store._id;
+          return (
+            <button
+              key={store._id}
+              ref={isSelected ? selectedChipRef : undefined}
+              onClick={() => setStoreFilter(store._id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                isSelected
+                  ? "bg-coral-500 text-white"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              }`}
+            >
+              {store.name} ({count})
+            </button>
+          );
+        })}
+        {(ingredientCountByStore.get(null) || 0) > 0 && (
+          <button
+            ref={storeFilter === "none" ? selectedChipRef : undefined}
+            onClick={() => setStoreFilter("none")}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              storeFilter === "none"
+                ? "bg-coral-500 text-white"
+                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+            }`}
+          >
+            No store ({ingredientCountByStore.get(null)})
+          </button>
+        )}
       </div>
 
       {/* Ingredient grid. */}
