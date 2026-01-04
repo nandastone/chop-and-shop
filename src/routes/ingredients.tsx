@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { Plus, Search, Pencil, Trash2, X, Store, Package } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, X, Package } from "lucide-react";
 import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -16,10 +16,14 @@ function IngredientsPage() {
     convexQuery(api.ingredients.list, {})
   );
   const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
+  const { data: shoppingList } = useSuspenseQuery(
+    convexQuery(api.shoppingList.get, {})
+  );
 
   const createIngredient = useMutation(api.ingredients.create);
   const updateIngredient = useMutation(api.ingredients.update);
   const deleteIngredient = useMutation(api.ingredients.remove);
+  const addToList = useMutation(api.shoppingList.addManualIngredient);
 
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -34,11 +38,16 @@ function IngredientsPage() {
     null
   );
 
-  const storeMap = new Map(stores.map((s) => [s._id, s]));
-
-  const filteredIngredients = ingredients.filter((ing) =>
-    ing.name.toLowerCase().includes(search.toLowerCase())
+  // Build a map of manual ingredient quantities.
+  const manualQuantities = new Map(
+    (shoppingList.manualIngredients || []).map(
+      (i: { ingredientId: Id<"ingredients">; quantity: number }) => [i.ingredientId, i.quantity]
+    )
   );
+
+  const filteredIngredients = ingredients
+    .filter((ing) => ing.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -104,57 +113,68 @@ function IngredientsPage() {
           onAdd={() => setShowAddModal(true)}
         />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-0.5">
           {filteredIngredients.map((ingredient) => {
-            const store = ingredient.storeId
-              ? storeMap.get(ingredient.storeId)
-              : null;
+            const inListQuantity = manualQuantities.get(ingredient._id) || 0;
+            const isInList = inListQuantity > 0;
             return (
-              <div
-                key={ingredient._id}
-                className="card p-3 flex flex-col"
-              >
-                {/* Photo placeholder. */}
-                <div className="aspect-square bg-gradient-to-br from-coral-100 to-warm-200 rounded-xl mb-3 flex items-center justify-center">
-                  <Package className="w-12 h-12 text-coral-300" />
-                </div>
-
-                {/* Name. */}
-                <h3 className="font-semibold text-stone-800 text-sm truncate">
-                  {ingredient.name}
-                </h3>
-
-                {/* Store badge. */}
-                {store && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Store className="w-3 h-3 text-stone-400" />
-                    <span className="text-xs text-stone-500 truncate">
-                      {store.name}
-                    </span>
+              <div key={ingredient._id} className="relative pt-1.5 px-1.5">
+                {/* Quantity badge. */}
+                {isInList && (
+                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-sage-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
+                    {inListQuantity}
                   </div>
                 )}
 
-                {/* Actions. */}
-                <div className="flex gap-1 mt-2 pt-2 border-t border-stone-100">
-                  <button
-                    onClick={() =>
-                      setEditingIngredient({
-                        id: ingredient._id,
-                        name: ingredient.name,
-                        storeId: ingredient.storeId,
-                      })
-                    }
-                    className="flex-1 p-2 rounded-lg text-stone-400 hover:text-coral-500 hover:bg-coral-50 transition-colors"
+                {/* Edit button. */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingIngredient({
+                      id: ingredient._id,
+                      name: ingredient.name,
+                      storeId: ingredient.storeId,
+                    });
+                  }}
+                  className="absolute top-0.5 left-1 w-5 h-5 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 z-10"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => addToList({ ingredientId: ingredient._id })}
+                  className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 ${
+                    isInList
+                      ? "bg-sage-100 border-sage-500"
+                      : "bg-white border-stone-200 hover:border-sage-300"
+                  }`}
+                >
+                  {/* Photo placeholder. */}
+                  <div
+                    className={`w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 ${
+                      isInList
+                        ? "bg-sage-200"
+                        : "bg-gradient-to-br from-coral-100 to-warm-200"
+                    }`}
                   >
-                    <Pencil className="w-4 h-4 mx-auto" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(ingredient._id)}
-                    className="flex-1 p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    <Package
+                      className={`w-4 h-4 ${
+                        isInList ? "text-sage-600" : "text-coral-300"
+                      }`}
+                    />
+                  </div>
+
+                  {/* Name. */}
+                  <span
+                    className={`text-[11px] font-medium text-center truncate w-full ${
+                      isInList ? "text-sage-700" : "text-stone-700"
+                    }`}
                   >
-                    <Trash2 className="w-4 h-4 mx-auto" />
-                  </button>
-                </div>
+                    {ingredient.name}
+                  </span>
+                </button>
               </div>
             );
           })}
@@ -252,6 +272,16 @@ function IngredientsPage() {
               ))}
             </select>
             <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirm(editingIngredient.id);
+                  setEditingIngredient(null);
+                }}
+                className="p-2.5 rounded-xl text-red-500 hover:bg-red-50"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
               <button
                 type="button"
                 onClick={() => setEditingIngredient(null)}

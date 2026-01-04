@@ -60,9 +60,9 @@ function NewDishPage() {
     setItems(newItems);
   };
 
-  const filteredIngredients = allIngredients.filter((ing) =>
-    ing.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredIngredients = allIngredients
+    .filter((ing) => ing.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const totalItems = Array.from(items.values()).reduce(
     (sum, item) => sum + item.quantity,
@@ -131,14 +131,14 @@ function NewDishPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-0.5">
             {filteredIngredients.map((ingredient) => {
               const selected = items.get(ingredient._id);
               return (
-                <div key={ingredient._id} className="relative pt-2 pl-2">
+                <div key={ingredient._id} className="relative pt-1.5 px-1.5">
                   {/* Quantity badge. */}
                   {selected && (
-                    <div className="absolute top-0 right-0 w-7 h-7 bg-coral-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-lg z-10">
+                    <div className="absolute top-0.5 right-1 w-5 h-5 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
                       {selected.quantity}
                     </div>
                   )}
@@ -148,9 +148,9 @@ function NewDishPage() {
                     <button
                       type="button"
                       onClick={() => handleClearIngredient(ingredient._id)}
-                      className="absolute top-0 left-0 w-6 h-6 bg-stone-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 z-10"
+                      className="absolute top-0.5 left-1 w-5 h-5 bg-stone-500 text-white rounded-full flex items-center justify-center shadow hover:bg-red-500 z-10"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-2.5 h-2.5" />
                     </button>
                   )}
 
@@ -159,7 +159,7 @@ function NewDishPage() {
                     onClick={() =>
                       handleTapIngredient(ingredient._id, ingredient.name)
                     }
-                    className={`w-full h-full flex flex-col items-center p-3 rounded-2xl transition-all border-2 ${
+                    className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 ${
                       selected
                         ? "bg-coral-100 border-coral-500"
                         : "bg-white border-stone-200 hover:border-coral-300"
@@ -167,14 +167,14 @@ function NewDishPage() {
                   >
                     {/* Photo placeholder. */}
                     <div
-                      className={`w-12 h-12 rounded-xl mb-2 flex items-center justify-center flex-shrink-0 ${
+                      className={`w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 ${
                         selected
                           ? "bg-coral-200"
                           : "bg-gradient-to-br from-coral-100 to-warm-200"
                       }`}
                     >
                       <Package
-                        className={`w-6 h-6 ${
+                        className={`w-4 h-4 ${
                           selected ? "text-coral-500" : "text-coral-300"
                         }`}
                       />
@@ -182,7 +182,7 @@ function NewDishPage() {
 
                     {/* Name. */}
                     <span
-                      className={`text-xs font-medium text-center leading-tight line-clamp-2 h-8 ${
+                      className={`text-[11px] font-medium text-center truncate w-full ${
                         selected ? "text-coral-700" : "text-stone-700"
                       }`}
                     >

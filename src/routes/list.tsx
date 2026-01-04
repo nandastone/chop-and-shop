@@ -29,6 +29,7 @@ function ShoppingListPage() {
   const toggleItem = useMutation(api.shoppingList.toggleItem);
   const excludeIngredient = useMutation(api.shoppingList.excludeIngredient);
   const includeIngredient = useMutation(api.shoppingList.includeIngredient);
+  const removeManualIngredient = useMutation(api.shoppingList.removeManualIngredient);
   const addMiscItem = useMutation(api.shoppingList.addMiscItem);
   const toggleMiscItem = useMutation(api.shoppingList.toggleMiscItem);
   const removeMiscItem = useMutation(api.shoppingList.removeMiscItem);
@@ -259,6 +260,11 @@ function ShoppingListPage() {
                             ? includeIngredient({ ingredientId: item.ingredientId })
                             : excludeIngredient({ ingredientId: item.ingredientId })
                         }
+                        onRemoveManual={
+                          item.manualQuantity > 0
+                            ? () => removeManualIngredient({ ingredientId: item.ingredientId })
+                            : undefined
+                        }
                       />
                     ))}
                     {storeMiscItems.map((item: MiscItem) => (
@@ -316,17 +322,24 @@ function ShoppingItem({
   item,
   onToggle,
   onToggleExclude,
+  onRemoveManual,
 }: {
   item: {
     ingredient: { name: string };
     totalCount: number;
+    manualQuantity: number;
+    fromDishes: string[];
     isChecked: boolean;
     isExcluded: boolean;
   };
   onToggle: () => void;
   onToggleExclude: () => void;
+  onRemoveManual?: () => void;
 }) {
   const isDimmed = item.isChecked || item.isExcluded;
+  const dishCount = item.totalCount - item.manualQuantity;
+  const hasManual = item.manualQuantity > 0;
+  const hasDish = dishCount > 0;
 
   return (
     <div
@@ -349,7 +362,19 @@ function ShoppingItem({
         {item.totalCount > 1 && (
           <span className={isDimmed ? "text-stone-400" : "text-coral-500"}> ({item.totalCount})</span>
         )}
+        {hasManual && hasDish && (
+          <span className="text-xs text-sage-600 ml-1">+{item.manualQuantity} added</span>
+        )}
       </span>
+      {hasManual && onRemoveManual && (
+        <button
+          onClick={onRemoveManual}
+          className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+          title="Remove manually added"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
       <button
         onClick={onToggleExclude}
         className={`p-1.5 rounded-lg transition-colors ${

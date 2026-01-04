@@ -3,8 +3,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { Plus, Search, ChefHat } from "lucide-react";
+import { Plus, Minus, Search, ChefHat } from "lucide-react";
 import { useState } from "react";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/")({
   component: DishesPage,
@@ -14,7 +15,15 @@ function DishesPage() {
   const { data: dishes } = useSuspenseQuery(
     convexQuery(api.dishes.listWithIngredients, {})
   );
+  const { data: shoppingList } = useSuspenseQuery(
+    convexQuery(api.shoppingList.get, {})
+  );
   const [search, setSearch] = useState("");
+
+  // Build a map of dish ID -> count in shopping list.
+  const dishCounts = new Map(
+    shoppingList.selectedDishes.map((d: { dishId: Id<"dishes">; count: number }) => [d.dishId, d.count])
+  );
 
   const filteredDishes = dishes.filter((dish) =>
     dish.name.toLowerCase().includes(search.toLowerCase())
@@ -55,7 +64,7 @@ function DishesPage() {
       ) : (
         <div className="space-y-3">
           {filteredDishes.map((dish) => (
-            <DishCard key={dish._id} dish={dish} />
+            <DishCard key={dish._id} dish={dish} listCount={dishCounts.get(dish._id) || 0} />
           ))}
         </div>
       )}
@@ -65,6 +74,7 @@ function DishesPage() {
 
 function DishCard({
   dish,
+  listCount,
 }: {
   dish: {
     _id: string;
@@ -75,11 +85,15 @@ function DishCard({
       ingredient?: { name: string } | undefined;
     }>;
   };
+  listCount: number;
 }) {
   const addDish = useMutation(api.shoppingList.addDish);
+  const setDishCount = useMutation(api.shoppingList.setDishCount);
+
+  const isInList = listCount > 0;
 
   return (
-    <div className="card">
+    <div className={`card ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}>
       <div className="flex items-start justify-between">
         <Link to="/dish/$id" params={{ id: dish._id }} className="flex-1">
           <h3 className="font-semibold text-stone-800">{dish.name}</h3>
@@ -104,13 +118,43 @@ function DishCard({
             </div>
           )}
         </Link>
-        <button
-          onClick={() => addDish({ dishId: dish._id as any })}
-          className="ml-3 p-2 rounded-xl bg-coral-100 text-coral-600 hover:bg-coral-200 transition-colors"
-          title="Add to shopping list"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
+        {isInList ? (
+          <div className="ml-3 flex items-center gap-1 bg-coral-100 rounded-xl">
+            <button
+              onClick={() =>
+                setDishCount({
+                  dishId: dish._id as Id<"dishes">,
+                  count: Math.max(0, listCount - 1),
+                })
+              }
+              className="p-2.5 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+            >
+              <Minus className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-bold text-coral-700 w-5 text-center">
+              {listCount}
+            </span>
+            <button
+              onClick={() =>
+                setDishCount({
+                  dishId: dish._id as Id<"dishes">,
+                  count: listCount + 1,
+                })
+              }
+              className="p-2.5 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => addDish({ dishId: dish._id as Id<"dishes"> })}
+            className="ml-3 p-2.5 rounded-xl bg-coral-100 text-coral-600 hover:bg-coral-200 transition-colors"
+            title="Add to shopping list"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </div>
   );

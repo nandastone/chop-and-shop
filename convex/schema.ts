@@ -33,6 +33,15 @@ export default defineSchema({
         count: v.number(),
       })
     ),
+    // Manually added ingredients (not from dishes).
+    manualIngredients: v.optional(
+      v.array(
+        v.object({
+          ingredientId: v.id("ingredients"),
+          quantity: v.number(),
+        })
+      )
+    ),
     excludedIngredientIds: v.array(v.id("ingredients")),
     checkedIngredientIds: v.array(v.id("ingredients")),
     miscItems: v.array(

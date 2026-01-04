@@ -6,6 +6,7 @@ import type { Id } from "./_generated/dataModel";
 type ShoppingListDoc = {
   _id: Id<"shoppingList">;
   selectedDishes: Array<{ dishId: Id<"dishes">; count: number }>;
+  manualIngredients?: Array<{ ingredientId: Id<"ingredients">; quantity: number }>;
   excludedIngredientIds: Id<"ingredients">[];
   checkedIngredientIds: Id<"ingredients">[];
   miscItems: Array<{
@@ -19,6 +20,7 @@ type ShoppingListDoc = {
 // Default empty list for queries when no list exists yet.
 const emptyList = {
   selectedDishes: [] as Array<{ dishId: Id<"dishes">; count: number }>,
+  manualIngredients: [] as Array<{ ingredientId: Id<"ingredients">; quantity: number }>,
   excludedIngredientIds: [] as Id<"ingredients">[],
   checkedIngredientIds: [] as Id<"ingredients">[],
   miscItems: [] as Array<{
@@ -44,6 +46,7 @@ async function getOrCreateList(ctx: {
 
   const id = await ctx.db.insert("shoppingList", {
     selectedDishes: [],
+    manualIngredients: [],
     excludedIngredientIds: [],
     checkedIngredientIds: [],
     miscItems: [],
@@ -81,6 +84,7 @@ export const getAggregated = query({
         totalCount: number;
         quantities: string[];
         fromDishes: string[];
+        manualQuantity: number; // Manually added quantity (not from dishes).
       }
     >();
 
@@ -108,8 +112,31 @@ export const getAggregated = query({
             totalCount: count,
             quantities: Array(count).fill(item.quantity),
             fromDishes: [dish.name],
+            manualQuantity: 0,
           });
         }
+      }
+    }
+
+    // Add manually added ingredients.
+    const manualIngredients = list.manualIngredients || [];
+    for (const { ingredientId, quantity } of manualIngredients) {
+      const existing = aggregated.get(ingredientId);
+      const ingredient = ingredientMap.get(ingredientId);
+      if (!ingredient) continue;
+
+      if (existing) {
+        existing.totalCount += quantity;
+        existing.manualQuantity += quantity;
+      } else {
+        aggregated.set(ingredientId, {
+          ingredientId,
+          ingredient,
+          totalCount: quantity,
+          quantities: [],
+          fromDishes: [],
+          manualQuantity: quantity,
+        });
       }
     }
 
@@ -368,6 +395,91 @@ export const toggleMiscItem = mutation({
   },
 });
 
+// Add a manual ingredient to the list.
+export const addManualIngredient = mutation({
+  args: { ingredientId: v.id("ingredients"), quantity: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const list = await getOrCreateList(ctx);
+    const manualIngredients = list.manualIngredients || [];
+    const existing = manualIngredients.find(
+      (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+        i.ingredientId === args.ingredientId
+    );
+
+    if (existing) {
+      // Increment quantity.
+      const updated = manualIngredients.map(
+        (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+          i.ingredientId === args.ingredientId
+            ? { ...i, quantity: i.quantity + (args.quantity || 1) }
+            : i
+      );
+      await ctx.db.patch(list._id, { manualIngredients: updated });
+    } else {
+      // Add new.
+      await ctx.db.patch(list._id, {
+        manualIngredients: [
+          ...manualIngredients,
+          { ingredientId: args.ingredientId, quantity: args.quantity || 1 },
+        ],
+      });
+    }
+  },
+});
+
+// Remove a manual ingredient from the list.
+export const removeManualIngredient = mutation({
+  args: { ingredientId: v.id("ingredients") },
+  handler: async (ctx, args) => {
+    const list = await getOrCreateList(ctx);
+    const manualIngredients = list.manualIngredients || [];
+    const updated = manualIngredients.filter(
+      (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+        i.ingredientId !== args.ingredientId
+    );
+    await ctx.db.patch(list._id, { manualIngredients: updated });
+  },
+});
+
+// Set manual ingredient quantity.
+export const setManualIngredientQuantity = mutation({
+  args: { ingredientId: v.id("ingredients"), quantity: v.number() },
+  handler: async (ctx, args) => {
+    const list = await getOrCreateList(ctx);
+    const manualIngredients = list.manualIngredients || [];
+
+    if (args.quantity <= 0) {
+      // Remove if quantity is 0 or less.
+      const updated = manualIngredients.filter(
+        (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+          i.ingredientId !== args.ingredientId
+      );
+      await ctx.db.patch(list._id, { manualIngredients: updated });
+    } else {
+      const existing = manualIngredients.find(
+        (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+          i.ingredientId === args.ingredientId
+      );
+      if (existing) {
+        const updated = manualIngredients.map(
+          (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
+            i.ingredientId === args.ingredientId
+              ? { ...i, quantity: args.quantity }
+              : i
+        );
+        await ctx.db.patch(list._id, { manualIngredients: updated });
+      } else {
+        await ctx.db.patch(list._id, {
+          manualIngredients: [
+            ...manualIngredients,
+            { ingredientId: args.ingredientId, quantity: args.quantity },
+          ],
+        });
+      }
+    }
+  },
+});
+
 // Clear the entire list.
 export const clear = mutation({
   args: {},
@@ -375,6 +487,7 @@ export const clear = mutation({
     const list = await getOrCreateList(ctx);
     await ctx.db.patch(list._id, {
       selectedDishes: [],
+      manualIngredients: [],
       excludedIngredientIds: [],
       checkedIngredientIds: [],
       miscItems: [],
