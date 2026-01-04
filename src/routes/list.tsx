@@ -11,6 +11,7 @@ import {
   Check,
   Trash2,
   Home,
+  Printer,
 } from "lucide-react";
 import { useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -79,13 +80,22 @@ function ShoppingListPage() {
           )}
         </div>
         {!isEmpty && (
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            className="p-2 rounded-xl text-stone-400 hover:text-red-500 hover:bg-red-50"
-            title="Clear list"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => window.print()}
+              className="p-2 rounded-xl text-stone-400 hover:text-coral-500 hover:bg-coral-50 no-print"
+              title="Print list"
+            >
+              <Printer className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="p-2 rounded-xl text-stone-400 hover:text-red-500 hover:bg-red-50 no-print"
+              title="Clear list"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -104,7 +114,7 @@ function ShoppingListPage() {
       ) : (
         <div className="space-y-6">
           {/* Selected dishes. */}
-          <section>
+          <section className="no-print">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide">
                 Dishes ({data.selectedDishes.length})
@@ -163,7 +173,7 @@ function ShoppingListPage() {
 
           {/* Shopping items by store. */}
           <section>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 no-print">
               <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide">
                 Items to Buy
               </h2>
@@ -182,7 +192,7 @@ function ShoppingListPage() {
                   e.preventDefault();
                   handleAddMiscItem();
                 }}
-                className="card mb-4"
+                className="card mb-4 no-print"
               >
                 <input
                   type="text"
@@ -227,58 +237,60 @@ function ShoppingListPage() {
             )}
 
             {/* Render all stores (in order) plus "Other" for no-store items. */}
-            {[...data.stores, null].map((store) => {
-              const storeId = store?._id || null;
+            <div className="print-list">
+              {[...data.stores, null].map((store) => {
+                const storeId = store?._id || null;
 
-              // Get dish ingredients for this store.
-              const storeIngredients = data.byStore.find(
-                (s: { store?: { _id: string } }) => (s.store?._id || null) === storeId
-              )?.items || [];
+                // Get dish ingredients for this store.
+                const storeIngredients = data.byStore.find(
+                  (s: { store?: { _id: string } }) => (s.store?._id || null) === storeId
+                )?.items || [];
 
-              // Get misc items for this store.
-              const storeMiscItems = data.miscItems.filter(
-                (item: MiscItem) => (item.storeId || null) === storeId
-              );
+                // Get misc items for this store.
+                const storeMiscItems = data.miscItems.filter(
+                  (item: MiscItem) => (item.storeId || null) === storeId
+                );
 
-              if (storeIngredients.length === 0 && storeMiscItems.length === 0) return null;
+                if (storeIngredients.length === 0 && storeMiscItems.length === 0) return null;
 
-              return (
-                <div key={storeId || "no-store"} className="mb-4">
-                  <div className="store-header mb-2">
-                    {store?.name || "Other"}
+                return (
+                  <div key={storeId || "no-store"} className="mb-4 store-section">
+                    <div className="store-header mb-2">
+                      {store?.name || "Other"}
+                    </div>
+                    <div className="space-y-1">
+                      {storeIngredients.map((item: any) => (
+                        <ShoppingItem
+                          key={item.ingredientId}
+                          item={item}
+                          onToggle={() =>
+                            toggleItem({ ingredientId: item.ingredientId })
+                          }
+                          onToggleExclude={() =>
+                            item.isExcluded
+                              ? includeIngredient({ ingredientId: item.ingredientId })
+                              : excludeIngredient({ ingredientId: item.ingredientId })
+                          }
+                          onRemoveManual={
+                            item.manualQuantity > 0
+                              ? () => removeManualIngredient({ ingredientId: item.ingredientId })
+                              : undefined
+                          }
+                        />
+                      ))}
+                      {storeMiscItems.map((item: MiscItem) => (
+                        <MiscItemComponent
+                          key={item.id}
+                          item={item}
+                          onToggle={() => toggleMiscItem({ itemId: item.id })}
+                          onRemove={() => removeMiscItem({ itemId: item.id })}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    {storeIngredients.map((item: any) => (
-                      <ShoppingItem
-                        key={item.ingredientId}
-                        item={item}
-                        onToggle={() =>
-                          toggleItem({ ingredientId: item.ingredientId })
-                        }
-                        onToggleExclude={() =>
-                          item.isExcluded
-                            ? includeIngredient({ ingredientId: item.ingredientId })
-                            : excludeIngredient({ ingredientId: item.ingredientId })
-                        }
-                        onRemoveManual={
-                          item.manualQuantity > 0
-                            ? () => removeManualIngredient({ ingredientId: item.ingredientId })
-                            : undefined
-                        }
-                      />
-                    ))}
-                    {storeMiscItems.map((item: MiscItem) => (
-                      <MiscItemComponent
-                        key={item.id}
-                        item={item}
-                        onToggle={() => toggleMiscItem({ itemId: item.id })}
-                        onRemove={() => removeMiscItem({ itemId: item.id })}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </section>
 
         </div>
@@ -343,7 +355,7 @@ function ShoppingItem({
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 bg-white rounded-xl transition-opacity ${
+      className={`print-item flex items-center gap-3 p-3 bg-white rounded-xl transition-opacity ${
         isDimmed ? "opacity-40" : ""
       }`}
     >
@@ -363,13 +375,13 @@ function ShoppingItem({
           <span className={isDimmed ? "text-stone-400" : "text-coral-500"}> ({item.totalCount})</span>
         )}
         {hasManual && hasDish && (
-          <span className="text-xs text-sage-600 ml-1">+{item.manualQuantity} added</span>
+          <span className="text-xs text-sage-600 ml-1 no-print">+{item.manualQuantity} added</span>
         )}
       </span>
       {hasManual && onRemoveManual && (
         <button
           onClick={onRemoveManual}
-          className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+          className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors no-print"
           title="Remove manually added"
         >
           <X className="w-4 h-4" />
@@ -377,7 +389,7 @@ function ShoppingItem({
       )}
       <button
         onClick={onToggleExclude}
-        className={`p-1.5 rounded-lg transition-colors ${
+        className={`p-1.5 rounded-lg transition-colors no-print ${
           item.isExcluded
             ? "text-coral-500 bg-coral-50"
             : "text-stone-300 hover:text-stone-500 hover:bg-stone-100"
@@ -401,7 +413,7 @@ function MiscItemComponent({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 p-3 bg-white rounded-xl transition-opacity ${
+      className={`print-item flex items-center gap-3 p-3 bg-white rounded-xl transition-opacity ${
         item.checked ? "opacity-50" : ""
       }`}
     >
@@ -420,7 +432,7 @@ function MiscItemComponent({
       </span>
       <button
         onClick={onRemove}
-        className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50"
+        className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 no-print"
       >
         <X className="w-4 h-4" />
       </button>

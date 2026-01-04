@@ -128,3 +128,106 @@
   }
 }
 
+/* Print utility class. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Print styles. */
+@media print {
+  /* Small base font. */
+  html, body {
+    background: white !important;
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide navigation. */
+  .bottom-nav {
+    display: none !important;
+  }
+
+  /* Compact layout. */
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Compact header. */
+  main > div:first-child {
+    margin-bottom: 0.5rem !important;
+  }
+
+  main > div:first-child h1 {
+    font-size: 14px !important;
+  }
+
+  main > div:first-child p {
+    display: none !important;
+  }
+
+  /* Hide progress bar. */
+  .h-2.bg-stone-200 {
+    display: none !important;
+  }
+
+  /* Multi-column ingredient list. */
+  .print-list {
+    column-count: 3 !important;
+    column-gap: 1rem !important;
+  }
+
+  .print-list .store-section {
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Compact store headers. */
+  .store-header {
+    font-size: 10px !important;
+    padding: 0.2rem 0.4rem !important;
+    margin-bottom: 0.25rem !important;
+    background: #eee !important;
+    border-radius: 2px !important;
+  }
+
+  /* Compact item rows. */
+  .print-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.3rem !important;
+    padding: 0.1rem 0 !important;
+    font-size: 11px !important;
+  }
+
+  /* Small checkboxes. */
+  .print-item .checkbox {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    border: 1px solid #666 !important;
+    border-radius: 2px !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .print-item .checkbox svg {
+    display: none !important;
+  }
+
+  /* Remove all card styling. */
+  .card, .rounded-xl, .rounded-2xl {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+}
+
