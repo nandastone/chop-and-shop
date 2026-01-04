@@ -185,25 +185,33 @@
     display: none !important;
   }
 
-  /* Hide store sections in print - show flat list. */
-  .print-list .store-section {
-    display: contents !important;
-  }
-
-  .print-list .store-header {
-    display: none !important;
-  }
-
-  .print-list .space-y-1 {
-    display: contents !important;
-  }
-
-  /* Items flow as inline-blocks for multi-column effect. */
+  /* Store sections as blocks. */
   .print-list {
     display: block !important;
     width: 100% !important;
   }
 
+  .print-list .store-section {
+    margin-bottom: 3mm !important;
+  }
+
+  /* Store headers. */
+  .print-list .store-header {
+    font-size: 9px !important;
+    font-weight: bold !important;
+    padding: 1mm 2mm !important;
+    margin-bottom: 1mm !important;
+    background: #ddd !important;
+    border-radius: 1px !important;
+    text-transform: uppercase !important;
+  }
+
+  /* Items container - items flow inline. */
+  .print-list .space-y-1 {
+    display: block !important;
+  }
+
+  /* Items flow as inline-blocks for multi-column effect. */
   .print-item {
     display: inline-flex !important;
     align-items: center !important;
