@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* Custom color palette for Chop & Shop. */
+@theme {
+  --color-coral-50: #fff7f5;
+  --color-coral-100: #ffebe5;
+  --color-coral-200: #ffd4c7;
+  --color-coral-300: #ffb39e;
+  --color-coral-400: #ff8a6b;
+  --color-coral-500: #f97352;
+  --color-coral-600: #e85a3a;
+  --color-coral-700: #c44528;
+  --color-coral-800: #a13a24;
+  --color-coral-900: #853424;
+
+  --color-sage-50: #f6faf3;
+  --color-sage-100: #e9f5e3;
+  --color-sage-200: #d3eac8;
+  --color-sage-300: #afd89d;
+  --color-sage-400: #84bf6a;
+  --color-sage-500: #63a348;
+  --color-sage-600: #4d8437;
+  --color-sage-700: #3d682d;
+  --color-sage-800: #345428;
+  --color-sage-900: #2c4623;
+
+  --color-warm-50: #fffbf7;
+  --color-warm-100: #fef7f0;
+  --color-warm-200: #fceee0;
+  --color-warm-300: #f8ddc5;
+  --color-warm-400: #f2c49d;
+  --color-warm-500: #e9a36e;
+  --color-warm-600: #db8349;
+  --color-warm-700: #c66a35;
+  --color-warm-800: #a4562f;
+  --color-warm-900: #86482a;
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-warm-50 text-stone-700 antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  /* Prevent zoom on input focus on iOS. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@layer components {
+  /* Primary button. */
+  .btn-primary {
+    @apply bg-coral-500 text-white font-medium px-4 py-2.5 rounded-xl
+           hover:bg-coral-600 active:bg-coral-700 transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-sm hover:shadow-md;
+  }
+
+  /* Secondary button. */
+  .btn-secondary {
+    @apply bg-white text-stone-700 font-medium px-4 py-2.5 rounded-xl
+           border border-stone-200 hover:bg-stone-50 active:bg-stone-100
+           transition-colors shadow-sm;
+  }
+
+  /* Card component. */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-stone-100 p-4;
+  }
+
+  /* Chip/tag component. */
+  .chip {
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium
+           bg-coral-100 text-coral-700;
+  }
+
+  .chip-selected {
+    @apply bg-coral-500 text-white;
+  }
+
+  .chip-sage {
+    @apply bg-sage-100 text-sage-700;
+  }
+
+  /* Input field. */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-stone-200
+           focus:outline-none focus:ring-2 focus:ring-coral-300 focus:border-coral-400
+           placeholder:text-stone-400 transition-all;
+  }
+
+  /* Bottom navigation. */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200
+           flex justify-around items-center z-50;
+    height: calc(4rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-0.5 px-4 py-2 text-stone-400
+           transition-colors;
+  }
+
+  .bottom-nav-item-active {
+    @apply text-coral-500;
+  }
+
+  /* Checkbox. */
+  .checkbox {
+    @apply w-6 h-6 rounded-lg border-2 border-stone-300
+           flex items-center justify-center transition-all cursor-pointer
+           hover:border-coral-400;
+  }
+
+  .checkbox-checked {
+    @apply bg-sage-500 border-sage-500 text-white;
+  }
+
+  /* Store section header. */
+  .store-header {
+    @apply flex items-center gap-2 py-2 px-3 bg-stone-100 rounded-xl
+           text-sm font-semibold text-stone-600 uppercase tracking-wide;
+  }
+}
+
