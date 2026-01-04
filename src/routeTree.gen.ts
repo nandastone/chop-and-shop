@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
-import { Route as ListRouteImport } from './routes/list'
 import { Route as IngredientsRouteImport } from './routes/ingredients'
+import { Route as DishesRouteImport } from './routes/dishes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DishNewRouteImport } from './routes/dish.new'
 import { Route as DishIdRouteImport } from './routes/dish.$id'
@@ -21,14 +21,14 @@ const StoresRoute = StoresRouteImport.update({
   path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ListRoute = ListRouteImport.update({
-  id: '/list',
-  path: '/list',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IngredientsRoute = IngredientsRouteImport.update({
   id: '/ingredients',
   path: '/ingredients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DishesRoute = DishesRouteImport.update({
+  id: '/dishes',
+  path: '/dishes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,16 +49,16 @@ const DishIdRoute = DishIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dishes': typeof DishesRoute
   '/ingredients': typeof IngredientsRoute
-  '/list': typeof ListRoute
   '/stores': typeof StoresRoute
   '/dish/$id': typeof DishIdRoute
   '/dish/new': typeof DishNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dishes': typeof DishesRoute
   '/ingredients': typeof IngredientsRoute
-  '/list': typeof ListRoute
   '/stores': typeof StoresRoute
   '/dish/$id': typeof DishIdRoute
   '/dish/new': typeof DishNewRoute
@@ -66,8 +66,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dishes': typeof DishesRoute
   '/ingredients': typeof IngredientsRoute
-  '/list': typeof ListRoute
   '/stores': typeof StoresRoute
   '/dish/$id': typeof DishIdRoute
   '/dish/new': typeof DishNewRoute
@@ -76,18 +76,18 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dishes'
     | '/ingredients'
-    | '/list'
     | '/stores'
     | '/dish/$id'
     | '/dish/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ingredients' | '/list' | '/stores' | '/dish/$id' | '/dish/new'
+  to: '/' | '/dishes' | '/ingredients' | '/stores' | '/dish/$id' | '/dish/new'
   id:
     | '__root__'
     | '/'
+    | '/dishes'
     | '/ingredients'
-    | '/list'
     | '/stores'
     | '/dish/$id'
     | '/dish/new'
@@ -95,8 +95,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DishesRoute: typeof DishesRoute
   IngredientsRoute: typeof IngredientsRoute
-  ListRoute: typeof ListRoute
   StoresRoute: typeof StoresRoute
   DishIdRoute: typeof DishIdRoute
   DishNewRoute: typeof DishNewRoute
@@ -111,18 +111,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/list': {
-      id: '/list'
-      path: '/list'
-      fullPath: '/list'
-      preLoaderRoute: typeof ListRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/ingredients': {
       id: '/ingredients'
       path: '/ingredients'
       fullPath: '/ingredients'
       preLoaderRoute: typeof IngredientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dishes': {
+      id: '/dishes'
+      path: '/dishes'
+      fullPath: '/dishes'
+      preLoaderRoute: typeof DishesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -151,8 +151,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DishesRoute: DishesRoute,
   IngredientsRoute: IngredientsRoute,
-  ListRoute: ListRoute,
   StoresRoute: StoresRoute,
   DishIdRoute: DishIdRoute,
   DishNewRoute: DishNewRoute,

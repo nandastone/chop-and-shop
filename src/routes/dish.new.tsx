@@ -75,7 +75,7 @@ function NewDishPage() {
     // Auto-add the new dish to the shopping list.
     await addDishToList({ dishId });
     toast.success(`"${name.trim()}" added to list`);
-    navigate({ to: "/list" });
+    navigate({ to: "/" });
   };
 
   const handleTapIngredient = (
@@ -115,7 +115,7 @@ function NewDishPage() {
       {/* Header. */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate({ to: "/" })}
+          onClick={() => navigate({ to: "/dishes" })}
           className="p-2 -ml-2 rounded-xl hover:bg-stone-100"
         >
           <ArrowLeft className="w-6 h-6 text-stone-600" />

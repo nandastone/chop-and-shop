@@ -185,53 +185,55 @@
     display: none !important;
   }
 
-  /* Multi-column ingredient list. */
-  .print-list {
-    columns: 55mm 3 !important;
-    column-gap: 5mm !important;
-    width: 100% !important;
-    orphans: 1;
-    widows: 1;
-  }
-
+  /* Hide store sections in print - show flat list. */
   .print-list .store-section {
-    break-inside: avoid-column;
-    -webkit-column-break-inside: avoid;
-    page-break-inside: avoid;
-    margin-bottom: 3mm !important;
+    display: contents !important;
   }
 
-  /* Compact store headers. */
-  .store-header {
-    font-size: 10px !important;
-    padding: 0.2rem 0.4rem !important;
-    margin-bottom: 0.25rem !important;
-    background: #eee !important;
-    border-radius: 2px !important;
+  .print-list .store-header {
+    display: none !important;
   }
 
-  /* Compact item rows. */
+  .print-list .space-y-1 {
+    display: contents !important;
+  }
+
+  /* Items flow as inline-blocks for multi-column effect. */
+  .print-list {
+    display: block !important;
+    width: 100% !important;
+  }
+
   .print-item {
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
-    gap: 0.3rem !important;
-    padding: 0.1rem 0 !important;
-    font-size: 11px !important;
+    gap: 1.5mm !important;
+    width: 32% !important;
+    padding: 0.5mm 0 !important;
+    font-size: 10px !important;
+    vertical-align: top !important;
+    box-sizing: border-box !important;
   }
 
   /* Small checkboxes. */
   .print-item .checkbox {
-    width: 10px !important;
-    height: 10px !important;
-    min-width: 10px !important;
-    border: 1px solid #666 !important;
-    border-radius: 2px !important;
+    width: 8px !important;
+    height: 8px !important;
+    min-width: 8px !important;
+    border: 1px solid #444 !important;
+    border-radius: 1px !important;
     background: white !important;
     padding: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .print-item .checkbox svg {
     display: none !important;
+  }
+
+  .print-item span {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
   }
 
   /* Remove all card styling. */

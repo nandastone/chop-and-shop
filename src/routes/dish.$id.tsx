@@ -110,13 +110,13 @@ function EditDishPage() {
       })),
     });
     toast.success("Dish updated");
-    navigate({ to: "/" });
+    navigate({ to: "/dishes" });
   };
 
   const handleDelete = async () => {
     await deleteDish({ id: id as Id<"dishes"> });
     toast.success("Dish deleted");
-    navigate({ to: "/" });
+    navigate({ to: "/dishes" });
   };
 
   const handleTapIngredient = (
@@ -156,7 +156,7 @@ function EditDishPage() {
       {/* Header. */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate({ to: "/" })}
+          onClick={() => navigate({ to: "/dishes" })}
           className="p-2 -ml-2 rounded-xl hover:bg-stone-100"
         >
           <ArrowLeft className="w-6 h-6 text-stone-600" />

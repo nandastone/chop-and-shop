@@ -75,8 +75,8 @@ function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const navItems = [
-    { to: "/list", icon: ShoppingCart, label: "List" },
-    { to: "/", icon: UtensilsCrossed, label: "Dishes" },
+    { to: "/", icon: ShoppingCart, label: "List" },
+    { to: "/dishes", icon: UtensilsCrossed, label: "Dishes" },
     { to: "/ingredients", icon: Package, label: "Ingredients" },
     { to: "/stores", icon: Store, label: "Stores" },
   ];
@@ -85,7 +85,7 @@ function BottomNav() {
     <nav className="bottom-nav">
       {navItems.map((item) => {
         const isActive =
-          item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          item.to === "/" ? pathname === "/" : pathname.startsWith(item.to) && item.to !== "/";
         return (
           <Link
             key={item.to}
