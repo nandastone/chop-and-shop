@@ -211,12 +211,12 @@
     display: block !important;
   }
 
-  /* Items flow as inline-blocks for multi-column effect. */
+  /* Items flow as inline-blocks for 2-column layout. */
   .print-item {
     display: inline-flex !important;
     align-items: center !important;
     gap: 1.5mm !important;
-    width: 32% !important;
+    width: 48% !important;
     padding: 0.5mm 0 !important;
     font-size: 10px !important;
     vertical-align: top !important;
