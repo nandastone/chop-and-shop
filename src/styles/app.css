@@ -141,10 +141,16 @@
 
 /* Print styles. */
 @media print {
-  /* Small base font. */
+  /* Force page size and small base font. */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
   html, body {
     background: white !important;
     font-size: 11px !important;
+    width: 100% !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -154,10 +160,11 @@
     display: none !important;
   }
 
-  /* Compact layout. */
+  /* Compact layout - override any viewport constraints. */
   main {
     padding: 0 !important;
-    max-width: 100% !important;
+    max-width: none !important;
+    width: 100% !important;
   }
 
   /* Compact header. */
@@ -180,13 +187,18 @@
 
   /* Multi-column ingredient list. */
   .print-list {
-    column-count: 3 !important;
-    column-gap: 1rem !important;
+    columns: 55mm 3 !important;
+    column-gap: 5mm !important;
+    width: 100% !important;
+    orphans: 1;
+    widows: 1;
   }
 
   .print-list .store-section {
-    break-inside: avoid;
-    margin-bottom: 0.5rem;
+    break-inside: avoid-column;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 3mm !important;
   }
 
   /* Compact store headers. */
