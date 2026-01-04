@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { ArrowLeft, Search, Package, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Package, X, Trash2, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/dish/$id")({
@@ -21,9 +22,11 @@ function EditDishPage() {
   const { data: allIngredients } = useSuspenseQuery(
     convexQuery(api.ingredients.list, {})
   );
+  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
 
   const updateDish = useMutation(api.dishes.update);
   const deleteDish = useMutation(api.dishes.remove);
+  const createIngredient = useMutation(api.ingredients.create);
 
   const [name, setName] = useState("");
   const [items, setItems] = useState<
@@ -31,6 +34,40 @@ function EditDishPage() {
   >(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newIngredientName, setNewIngredientName] = useState("");
+  const [newIngredientStore, setNewIngredientStore] = useState<string>("");
+  const [ingredientError, setIngredientError] = useState("");
+
+  const handleCreateIngredient = async () => {
+    if (!newIngredientName.trim()) return;
+    setIngredientError("");
+    const ingredientName = newIngredientName.trim();
+
+    // Client-side duplicate check.
+    const nameLower = ingredientName.toLowerCase();
+    const duplicate = allIngredients.find(
+      (i) => i.name.toLowerCase() === nameLower
+    );
+    if (duplicate) {
+      setIngredientError(`"${duplicate.name}" already exists`);
+      return;
+    }
+
+    const newId = await createIngredient({
+      name: ingredientName,
+      storeId: newIngredientStore
+        ? (newIngredientStore as Id<"stores">)
+        : undefined,
+    });
+    // Auto-select the new ingredient.
+    const newItems = new Map(items);
+    newItems.set(newId, { name: ingredientName, quantity: 1 });
+    setItems(newItems);
+    setNewIngredientName("");
+    setNewIngredientStore("");
+    setShowAddModal(false);
+  };
 
   // Initialize form with dish data.
   useEffect(() => {
@@ -72,11 +109,13 @@ function EditDishPage() {
         quantity: String(quantity),
       })),
     });
+    toast.success("Dish updated");
     navigate({ to: "/" });
   };
 
   const handleDelete = async () => {
     await deleteDish({ id: id as Id<"dishes"> });
+    toast.success("Dish deleted");
     navigate({ to: "/" });
   };
 
@@ -142,7 +181,7 @@ function EditDishPage() {
         />
       </div>
 
-      {/* Search + clear row. */}
+      {/* Search + add + clear row. */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
@@ -154,6 +193,16 @@ function EditDishPage() {
             className="input pl-10"
           />
         </div>
+        <button
+          onClick={() => {
+            setNewIngredientName(searchQuery);
+            setShowAddModal(true);
+          }}
+          className="px-3 rounded-xl bg-coral-500 text-white hover:bg-coral-600 text-sm font-medium flex items-center gap-1"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add</span>
+        </button>
         {items.size > 0 && (
           <button
             onClick={() => setItems(new Map())}
@@ -174,9 +223,15 @@ function EditDishPage() {
                 ? `No ingredients found for "${searchQuery}"`
                 : "No ingredients yet"}
             </p>
-            <Link to="/ingredients" className="text-coral-500 font-medium">
-              Manage ingredients
-            </Link>
+            <button
+              onClick={() => {
+                setNewIngredientName(searchQuery);
+                setShowAddModal(true);
+              }}
+              className="btn-primary"
+            >
+              Add ingredient
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-0.5">
@@ -283,6 +338,71 @@ function EditDishPage() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add ingredient modal. */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-stone-800">
+                New Ingredient
+              </h2>
+              <button
+                onClick={() => { setShowAddModal(false); setIngredientError(""); }}
+                className="p-1 rounded-lg hover:bg-stone-100"
+              >
+                <X className="w-5 h-5 text-stone-400" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateIngredient();
+              }}
+            >
+              <input
+                type="text"
+                value={newIngredientName}
+                onChange={(e) => { setNewIngredientName(e.target.value); setIngredientError(""); }}
+                placeholder="Ingredient name"
+                className={`input mb-3 ${ingredientError ? "border-red-500" : ""}`}
+                autoFocus
+              />
+              {ingredientError && (
+                <p className="text-red-500 text-sm mb-3 -mt-2">{ingredientError}</p>
+              )}
+              <select
+                value={newIngredientStore}
+                onChange={(e) => setNewIngredientStore(e.target.value)}
+                className="input mb-4"
+              >
+                <option value="">Select store (optional)</option>
+                {stores.map((store) => (
+                  <option key={store._id} value={store._id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowAddModal(false); setIngredientError(""); }}
+                  className="flex-1 btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newIngredientName.trim()}
+                  className="flex-1 btn-primary"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

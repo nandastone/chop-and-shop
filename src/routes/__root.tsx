@@ -9,6 +9,7 @@ import {
 import * as React from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { UtensilsCrossed, ShoppingCart, Store, Package } from "lucide-react";
+import { Toaster } from "sonner";
 import appCss from "~/styles/app.css?url";
 
 export const Route = createRootRouteWithContext<{
@@ -51,6 +52,7 @@ function RootComponent() {
     <RootDocument>
       <Outlet />
       <BottomNav />
+      <Toaster position="top-center" richColors />
     </RootDocument>
   );
 }

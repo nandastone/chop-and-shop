@@ -5,6 +5,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
 import { Plus, Minus, Search, ChefHat } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/")({
@@ -93,70 +94,83 @@ function DishCard({
   const isInList = listCount > 0;
 
   return (
-    <div className={`card ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}>
-      <div className="flex items-start justify-between">
-        <Link to="/dish/$id" params={{ id: dish._id }} className="flex-1">
-          <h3 className="font-semibold text-stone-800">{dish.name}</h3>
-          <p className="text-sm text-stone-500 mt-1">
-            {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
-          </p>
-          {dish.items.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {dish.items.slice(0, 4).map((item, i) => (
-                <span
-                  key={i}
-                  className="text-xs bg-warm-100 text-stone-600 px-2 py-0.5 rounded-full"
-                >
-                  {item.ingredient?.name || "Unknown"}
-                </span>
-              ))}
-              {dish.items.length > 4 && (
-                <span className="text-xs text-stone-400">
-                  +{dish.items.length - 4} more
-                </span>
-              )}
-            </div>
-          )}
-        </Link>
+    <Link
+      to="/dish/$id"
+      params={{ id: dish._id }}
+      className={`card block ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}
+    >
+      {/* Header row with name and controls. */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-stone-800 flex-1">{dish.name}</h3>
         {isInList ? (
-          <div className="ml-3 flex items-center gap-1 bg-coral-100 rounded-xl">
+          <div
+            className="flex items-center gap-1 bg-coral-100 rounded-xl"
+            onClick={(e) => e.preventDefault()}
+          >
             <button
-              onClick={() =>
+              onClick={(e) => {
+                e.preventDefault();
                 setDishCount({
                   dishId: dish._id as Id<"dishes">,
                   count: Math.max(0, listCount - 1),
-                })
-              }
-              className="p-2.5 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+                });
+              }}
+              className="p-2 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-4 h-4" />
             </button>
             <span className="text-sm font-bold text-coral-700 w-5 text-center">
               {listCount}
             </span>
             <button
-              onClick={() =>
+              onClick={(e) => {
+                e.preventDefault();
                 setDishCount({
                   dishId: dish._id as Id<"dishes">,
                   count: listCount + 1,
-                })
-              }
-              className="p-2.5 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+                });
+              }}
+              className="p-2 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <button
-            onClick={() => addDish({ dishId: dish._id as Id<"dishes"> })}
-            className="ml-3 p-2.5 rounded-xl bg-coral-100 text-coral-600 hover:bg-coral-200 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              addDish({ dishId: dish._id as Id<"dishes"> });
+              toast.success(`"${dish.name}" added to list`);
+            }}
+            className="p-2 rounded-xl bg-coral-100 text-coral-600 hover:bg-coral-200 transition-colors"
             title="Add to shopping list"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
           </button>
         )}
       </div>
-    </div>
+      {/* Details. */}
+      <p className="text-sm text-stone-500 mt-1">
+        {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
+      </p>
+      {dish.items.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {dish.items.slice(0, 4).map((item, i) => (
+            <span
+              key={i}
+              className="text-xs bg-warm-100 text-stone-600 px-2 py-0.5 rounded-full"
+            >
+              {item.ingredient?.name || "Unknown"}
+            </span>
+          ))}
+          {dish.items.length > 4 && (
+            <span className="text-xs text-stone-400">
+              +{dish.items.length - 4} more
+            </span>
+          )}
+        </div>
+      )}
+    </Link>
   );
 }
 

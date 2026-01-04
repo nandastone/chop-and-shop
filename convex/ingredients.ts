@@ -27,8 +27,18 @@ export const create = mutation({
     storeId: v.optional(v.id("stores")),
   },
   handler: async (ctx, args) => {
+    // Check for duplicate name (case-insensitive).
+    const existing = await ctx.db.query("ingredients").collect();
+    const nameLower = args.name.toLowerCase().trim();
+    const duplicate = existing.find(
+      (i) => i.name.toLowerCase().trim() === nameLower
+    );
+    if (duplicate) {
+      throw new Error(`Ingredient "${duplicate.name}" already exists`);
+    }
+
     return await ctx.db.insert("ingredients", {
-      name: args.name,
+      name: args.name.trim(),
       storeId: args.storeId,
     });
   },
@@ -42,8 +52,18 @@ export const update = mutation({
     storeId: v.optional(v.id("stores")),
   },
   handler: async (ctx, args) => {
+    // Check for duplicate name (case-insensitive), excluding self.
+    const existing = await ctx.db.query("ingredients").collect();
+    const nameLower = args.name.toLowerCase().trim();
+    const duplicate = existing.find(
+      (i) => i._id !== args.id && i.name.toLowerCase().trim() === nameLower
+    );
+    if (duplicate) {
+      throw new Error(`Ingredient "${duplicate.name}" already exists`);
+    }
+
     await ctx.db.patch(args.id, {
-      name: args.name,
+      name: args.name.trim(),
       storeId: args.storeId,
     });
   },

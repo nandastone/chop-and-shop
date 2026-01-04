@@ -5,6 +5,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
 import { Plus, Search, Pencil, Trash2, X, Package } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/ingredients")({
@@ -37,6 +38,8 @@ function IngredientsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<Id<"ingredients"> | null>(
     null
   );
+  const [createError, setCreateError] = useState("");
+  const [editError, setEditError] = useState("");
 
   // Build a map of manual ingredient quantities.
   const manualQuantities = new Map(
@@ -51,10 +54,23 @@ function IngredientsPage() {
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
+    setCreateError("");
+
+    // Client-side duplicate check.
+    const nameLower = newName.trim().toLowerCase();
+    const duplicate = ingredients.find(
+      (i) => i.name.toLowerCase() === nameLower
+    );
+    if (duplicate) {
+      setCreateError(`"${duplicate.name}" already exists`);
+      return;
+    }
+
     await createIngredient({
       name: newName.trim(),
       storeId: newStore ? (newStore as Id<"stores">) : undefined,
     });
+    toast.success(`Added "${newName.trim()}"`);
     setNewName("");
     setNewStore("");
     setShowAddModal(false);
@@ -62,11 +78,24 @@ function IngredientsPage() {
 
   const handleUpdate = async () => {
     if (!editingIngredient || !editingIngredient.name.trim()) return;
+    setEditError("");
+
+    // Client-side duplicate check (excluding self).
+    const nameLower = editingIngredient.name.trim().toLowerCase();
+    const duplicate = ingredients.find(
+      (i) => i._id !== editingIngredient.id && i.name.toLowerCase() === nameLower
+    );
+    if (duplicate) {
+      setEditError(`"${duplicate.name}" already exists`);
+      return;
+    }
+
     await updateIngredient({
       id: editingIngredient.id,
       name: editingIngredient.name.trim(),
       storeId: editingIngredient.storeId,
     });
+    toast.success("Ingredient updated");
     setEditingIngredient(null);
   };
 
@@ -183,7 +212,7 @@ function IngredientsPage() {
 
       {/* Add modal. */}
       {showAddModal && (
-        <Modal onClose={() => setShowAddModal(false)} title="New Ingredient">
+        <Modal onClose={() => { setShowAddModal(false); setCreateError(""); }} title="New Ingredient">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -193,11 +222,14 @@ function IngredientsPage() {
             <input
               type="text"
               value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              onChange={(e) => { setNewName(e.target.value); setCreateError(""); }}
               placeholder="Ingredient name"
-              className="input mb-3"
+              className={`input mb-3 ${createError ? "border-red-500" : ""}`}
               autoFocus
             />
+            {createError && (
+              <p className="text-red-500 text-sm mb-3 -mt-2">{createError}</p>
+            )}
             <select
               value={newStore}
               onChange={(e) => setNewStore(e.target.value)}
@@ -213,7 +245,7 @@ function IngredientsPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => { setShowAddModal(false); setCreateError(""); }}
                 className="flex-1 btn-secondary"
               >
                 Cancel
@@ -233,7 +265,7 @@ function IngredientsPage() {
       {/* Edit modal. */}
       {editingIngredient && (
         <Modal
-          onClose={() => setEditingIngredient(null)}
+          onClose={() => { setEditingIngredient(null); setEditError(""); }}
           title="Edit Ingredient"
         >
           <form
@@ -245,13 +277,17 @@ function IngredientsPage() {
             <input
               type="text"
               value={editingIngredient.name}
-              onChange={(e) =>
-                setEditingIngredient({ ...editingIngredient, name: e.target.value })
-              }
+              onChange={(e) => {
+                setEditingIngredient({ ...editingIngredient, name: e.target.value });
+                setEditError("");
+              }}
               placeholder="Ingredient name"
-              className="input mb-3"
+              className={`input mb-3 ${editError ? "border-red-500" : ""}`}
               autoFocus
             />
+            {editError && (
+              <p className="text-red-500 text-sm mb-3 -mt-2">{editError}</p>
+            )}
             <select
               value={editingIngredient.storeId || ""}
               onChange={(e) =>
@@ -277,6 +313,7 @@ function IngredientsPage() {
                 onClick={() => {
                   setDeleteConfirm(editingIngredient.id);
                   setEditingIngredient(null);
+                  setEditError("");
                 }}
                 className="p-2.5 rounded-xl text-red-500 hover:bg-red-50"
               >
@@ -284,7 +321,7 @@ function IngredientsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setEditingIngredient(null)}
+                onClick={() => { setEditingIngredient(null); setEditError(""); }}
                 className="flex-1 btn-secondary"
               >
                 Cancel
