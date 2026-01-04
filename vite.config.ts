@@ -17,8 +17,8 @@ export default defineConfig({
       projects: ["./tsconfig.json"],
     }),
     tanstackStart({
-      server: {
-        preset: "vercel",
+      spa: {
+        enabled: true,
       },
     }),
     viteReact(),
