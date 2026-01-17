@@ -100,7 +100,7 @@ function DishCard({
   };
 
   return (
-    <div className={`card ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}>
+    <div className={`card ${isInList ? "bg-sage-100" : ""}`}>
       {/* Header row with name and controls. */}
       <div className="flex items-center gap-2 mb-1">
         <button

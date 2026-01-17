@@ -283,7 +283,7 @@ function IngredientsPage() {
                 <button
                   type="button"
                   onClick={() => addToList({ ingredientId: ingredient._id })}
-                  className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 bg-white border-stone-200 hover:border-sage-300"
+                  className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm ${isInList ? "bg-sage-100" : "bg-white"}`}
                 >
                   {/* Photo placeholder. */}
                   <div
@@ -294,9 +294,7 @@ function IngredientsPage() {
 
                   {/* Name. */}
                   <span
-                    className={`text-[11px] font-medium text-center truncate w-full ${
-                      isInList ? "text-sage-700" : "text-stone-700"
-                    }`}
+                    className="text-[11px] font-medium text-center truncate w-full text-stone-700"
                   >
                     {ingredient.name}
                   </span>
