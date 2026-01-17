@@ -73,6 +73,53 @@ function StoresPage() {
   const newImageInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Resize image to max dimensions while maintaining aspect ratio.
+  const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+
+        // Scale down if larger than maxSize.
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = (height / width) * maxSize;
+            width = maxSize;
+          } else {
+            width = (width / height) * maxSize;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        // Fill with white background for transparency.
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Could not create blob"));
+          },
+          "image/jpeg",
+          0.9
+        );
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleImageUpload = async (
     file: File,
     setImageId: (id: Id<"_storage">) => void,
@@ -81,17 +128,20 @@ function StoresPage() {
   ) => {
     setUploading(true);
     try {
-      // Create preview.
+      // Resize image to max 256px.
+      const resizedBlob = await resizeImage(file, 256);
+
+      // Create preview from resized image.
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resizedBlob);
 
-      // Upload to Convex.
+      // Upload resized image to Convex.
       const uploadUrl = await generateUploadUrl();
       const response = await fetch(uploadUrl, {
         method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
+        headers: { "Content-Type": "image/jpeg" },
+        body: resizedBlob,
       });
       const { storageId } = await response.json();
       setImageId(storageId);
@@ -229,42 +279,47 @@ function StoresPage() {
                     }
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => newImageInputRef.current?.click()}
-                  disabled={isUploadingNew}
-                  className="w-full h-32 rounded-xl border-2 border-dashed border-stone-200 hover:border-coral-300 flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden"
-                  style={{
-                    backgroundColor: newStoreColor ? `${newStoreColor}15` : undefined,
-                  }}
-                >
-                  {isUploadingNew ? (
-                    <span className="text-sm text-stone-400">Uploading...</span>
-                  ) : newStoreImagePreview ? (
-                    <img
-                      src={newStoreImagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <>
-                      <Upload className="w-8 h-8 text-stone-300" />
-                      <span className="text-sm text-stone-400">Upload image</span>
-                    </>
+                <div className="flex items-center gap-3">
+                  {/* Thumbnail preview. */}
+                  {newStoreImagePreview && (
+                    <div className="w-14 h-14 rounded-lg bg-white border border-stone-200 overflow-hidden flex-shrink-0">
+                      <img
+                        src={newStoreImagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </div>
                   )}
-                </button>
-                {newStoreImagePreview && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setNewStoreImageId(undefined);
-                      setNewStoreImagePreview(null);
-                    }}
-                    className="mt-2 text-sm text-red-500 hover:text-red-600"
+                    onClick={() => newImageInputRef.current?.click()}
+                    disabled={isUploadingNew}
+                    className="flex-1 h-14 rounded-xl border-2 border-dashed border-stone-200 hover:border-coral-300 flex items-center justify-center gap-2 transition-colors"
                   >
-                    Remove image
+                    {isUploadingNew ? (
+                      <span className="text-sm text-stone-400">Uploading...</span>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-stone-400" />
+                        <span className="text-sm text-stone-400">
+                          {newStoreImagePreview ? "Change" : "Upload"} image
+                        </span>
+                      </>
+                    )}
                   </button>
-                )}
+                  {newStoreImagePreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewStoreImageId(undefined);
+                        setNewStoreImagePreview(null);
+                      }}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Store name. */}
@@ -362,7 +417,7 @@ function StoresPage() {
                     }}
                   >
                     {/* Image upload for edit. */}
-                    <div className="mb-3">
+                    <div className="mb-3 flex items-center gap-3">
                       <input
                         ref={editImageInputRef}
                         type="file"
@@ -380,33 +435,30 @@ function StoresPage() {
                           }
                         }}
                       />
+                      {/* Thumbnail preview. */}
+                      {(editImagePreview || editingStore.imageUrl) && (
+                        <div className="w-12 h-12 rounded-lg bg-white border border-stone-200 overflow-hidden flex-shrink-0">
+                          <img
+                            src={editImagePreview || editingStore.imageUrl || ""}
+                            alt="Preview"
+                            className="w-full h-full object-contain p-1"
+                          />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => editImageInputRef.current?.click()}
                         disabled={isUploadingEdit}
-                        className="w-full h-24 rounded-xl border-2 border-dashed border-stone-200 hover:border-coral-300 flex flex-col items-center justify-center gap-1 transition-colors overflow-hidden"
-                        style={{
-                          backgroundColor: editingStore.color ? `${editingStore.color}15` : undefined,
-                        }}
+                        className="flex-1 h-12 rounded-xl border-2 border-dashed border-stone-200 hover:border-coral-300 flex items-center justify-center gap-2 transition-colors"
                       >
                         {isUploadingEdit ? (
                           <span className="text-sm text-stone-400">Uploading...</span>
-                        ) : editImagePreview ? (
-                          <img
-                            src={editImagePreview}
-                            alt="Preview"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : editingStore.imageUrl ? (
-                          <img
-                            src={editingStore.imageUrl}
-                            alt={editingStore.name}
-                            className="w-full h-full object-cover"
-                          />
                         ) : (
                           <>
-                            <ImageIcon className="w-6 h-6 text-stone-300" />
-                            <span className="text-xs text-stone-400">Change image</span>
+                            <Upload className="w-4 h-4 text-stone-400" />
+                            <span className="text-sm text-stone-400">
+                              {editImagePreview || editingStore.imageUrl ? "Change" : "Upload"} image
+                            </span>
                           </>
                         )}
                       </button>
@@ -417,9 +469,9 @@ function StoresPage() {
                             setEditingStore({ ...editingStore, imageId: undefined, imageUrl: null });
                             setEditImagePreview(null);
                           }}
-                          className="mt-1 text-xs text-red-500 hover:text-red-600"
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                         >
-                          Remove image
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -546,16 +598,16 @@ function StoresPage() {
 
                   {/* Store image/icon. */}
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 bg-white"
                     style={{
-                      backgroundColor: store.color ? `${store.color}20` : "#ffebe5",
+                      backgroundColor: store.imageUrl ? "#ffffff" : (store.color ? `${store.color}20` : "#ffebe5"),
                     }}
                   >
                     {store.imageUrl ? (
                       <img
                         src={store.imageUrl}
                         alt={store.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain p-1"
                       />
                     ) : (
                       <Store
