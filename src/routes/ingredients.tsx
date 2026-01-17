@@ -283,25 +283,13 @@ function IngredientsPage() {
                 <button
                   type="button"
                   onClick={() => addToList({ ingredientId: ingredient._id })}
-                  className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 ${
-                    isInList
-                      ? "bg-sage-100 border-sage-500"
-                      : "bg-white border-stone-200 hover:border-sage-300"
-                  }`}
+                  className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 bg-white border-stone-200 hover:border-sage-300"
                 >
                   {/* Photo placeholder. */}
                   <div
-                    className={`w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 ${
-                      isInList
-                        ? "bg-sage-200"
-                        : "bg-gradient-to-br from-coral-100 to-warm-200"
-                    }`}
+                    className="w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-coral-100 to-warm-200"
                   >
-                    <Package
-                      className={`w-4 h-4 ${
-                        isInList ? "text-sage-600" : "text-coral-300"
-                      }`}
-                    />
+                    <Package className="w-4 h-4 text-coral-300" />
                   </div>
 
                   {/* Name. */}
