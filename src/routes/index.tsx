@@ -254,9 +254,23 @@ function ShoppingListPage() {
 
                 if (storeIngredients.length === 0 && storeMiscItems.length === 0) return null;
 
+                const storeColor = store?.color;
+
                 return (
                   <div key={storeId || "no-store"} className="mb-4 store-section">
-                    <div className="store-header mb-2">
+                    <div
+                      className="store-header mb-2 flex items-center gap-2"
+                      style={{
+                        backgroundColor: storeColor ? `${storeColor}20` : undefined,
+                        color: storeColor || undefined,
+                      }}
+                    >
+                      {storeColor && (
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: storeColor }}
+                        />
+                      )}
                       {store?.name || "Other"}
                     </div>
                     <div className="space-y-1">
