@@ -31,6 +31,8 @@ function ShoppingListPage() {
   const excludeIngredient = useMutation(api.shoppingList.excludeIngredient);
   const includeIngredient = useMutation(api.shoppingList.includeIngredient);
   const removeManualIngredient = useMutation(api.shoppingList.removeManualIngredient);
+  const setManualIngredientQuantity = useMutation(api.shoppingList.setManualIngredientQuantity);
+  const addManualIngredient = useMutation(api.shoppingList.addManualIngredient);
   const addMiscItem = useMutation(api.shoppingList.addMiscItem);
   const toggleMiscItem = useMutation(api.shoppingList.toggleMiscItem);
   const removeMiscItem = useMutation(api.shoppingList.removeMiscItem);
@@ -286,11 +288,17 @@ function ShoppingListPage() {
                               ? includeIngredient({ ingredientId: item.ingredientId })
                               : excludeIngredient({ ingredientId: item.ingredientId })
                           }
-                          onRemoveManual={
-                            item.manualQuantity > 0
-                              ? () => removeManualIngredient({ ingredientId: item.ingredientId })
-                              : undefined
+                          onIncrement={() =>
+                            addManualIngredient({ ingredientId: item.ingredientId, quantity: 1 })
                           }
+                          onDecrement={() => {
+                            const newQty = item.manualQuantity - 1;
+                            if (newQty <= 0) {
+                              removeManualIngredient({ ingredientId: item.ingredientId });
+                            } else {
+                              setManualIngredientQuantity({ ingredientId: item.ingredientId, quantity: newQty });
+                            }
+                          }}
                         />
                       ))}
                       {storeMiscItems.map((item: MiscItem) => (
@@ -349,7 +357,8 @@ function ShoppingItem({
   item,
   onToggle,
   onToggleExclude,
-  onRemoveManual,
+  onIncrement,
+  onDecrement,
 }: {
   item: {
     ingredient: { name: string };
@@ -361,12 +370,12 @@ function ShoppingItem({
   };
   onToggle: () => void;
   onToggleExclude: () => void;
-  onRemoveManual?: () => void;
+  onIncrement: () => void;
+  onDecrement: () => void;
 }) {
   const isDimmed = item.isChecked || item.isExcluded;
   const dishCount = item.totalCount - item.manualQuantity;
   const hasManual = item.manualQuantity > 0;
-  const hasDish = dishCount > 0;
 
   return (
     <div
@@ -389,19 +398,37 @@ function ShoppingItem({
         {item.totalCount > 1 && (
           <span className={isDimmed ? "text-stone-400" : "text-coral-500"}> ({item.totalCount})</span>
         )}
-        {hasManual && hasDish && (
-          <span className="text-xs text-sage-600 ml-1 no-print">+{item.manualQuantity} added</span>
-        )}
       </span>
-      {hasManual && onRemoveManual && (
+      {/* Quantity stepper for extras */}
+      <div className="flex items-center gap-1 no-print">
         <button
-          onClick={onRemoveManual}
-          className="p-1.5 rounded-lg text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors no-print"
-          title="Remove manually added"
+          onClick={onDecrement}
+          disabled={!hasManual}
+          className={`p-2 rounded-full transition-colors ${
+            hasManual
+              ? "text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+              : "text-stone-200 cursor-not-allowed"
+          }`}
+          title="Remove one extra"
         >
-          <X className="w-4 h-4" />
+          <Minus className="w-4 h-4" />
         </button>
-      )}
+        <span
+          className={`w-6 text-center text-sm font-semibold ${
+            hasManual ? "text-sage-600" : "text-stone-300"
+          }`}
+          title={hasManual ? `${item.manualQuantity} extra${item.manualQuantity !== 1 ? 's' : ''} (${dishCount} from dishes)` : "No extras added"}
+        >
+          {item.manualQuantity}
+        </span>
+        <button
+          onClick={onIncrement}
+          className="p-2 rounded-full text-stone-500 hover:bg-sage-100 hover:text-sage-700 transition-colors"
+          title="Add one extra"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
       <button
         onClick={onToggleExclude}
         className={`p-1.5 rounded-lg transition-colors no-print ${

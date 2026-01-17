@@ -1,9 +1,9 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { Plus, Minus, Search, ChefHat } from "lucide-react";
+import { Plus, Minus, Search, ChefHat, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -88,89 +88,96 @@ function DishCard({
   };
   listCount: number;
 }) {
+  const navigate = useNavigate();
   const addDish = useMutation(api.shoppingList.addDish);
   const setDishCount = useMutation(api.shoppingList.setDishCount);
 
   const isInList = listCount > 0;
 
+  const handleCardClick = () => {
+    addDish({ dishId: dish._id as Id<"dishes"> });
+    toast.success(`"${dish.name}" added to list`);
+  };
+
   return (
-    <Link
-      to="/dish/$id"
-      params={{ id: dish._id }}
-      className={`card block ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}
-    >
+    <div className={`card ${isInList ? "ring-2 ring-coral-300 bg-coral-50/50" : ""}`}>
       {/* Header row with name and controls. */}
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-stone-800 flex-1">{dish.name}</h3>
-        {isInList ? (
-          <div
-            className="flex items-center gap-1 bg-coral-100 rounded-xl"
-            onClick={(e) => e.preventDefault()}
-          >
+      <div className="flex items-center gap-2 mb-1">
+        <button
+          type="button"
+          onClick={handleCardClick}
+          className="flex-1 text-left"
+        >
+          <h3 className="font-semibold text-stone-800">{dish.name}</h3>
+        </button>
+        {isInList && (
+          <div className="flex items-center bg-white/50 rounded-full flex-shrink-0">
             <button
-              onClick={(e) => {
-                e.preventDefault();
+              type="button"
+              onClick={() => {
                 setDishCount({
                   dishId: dish._id as Id<"dishes">,
                   count: Math.max(0, listCount - 1),
                 });
               }}
-              className="p-2 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+              className="p-2 rounded-full hover:bg-white transition-colors"
             >
               <Minus className="w-4 h-4" />
             </button>
-            <span className="text-sm font-bold text-coral-700 w-5 text-center">
+            <span className="text-sm font-bold w-5 text-center">
               {listCount}
             </span>
             <button
-              onClick={(e) => {
-                e.preventDefault();
+              type="button"
+              onClick={() => {
                 setDishCount({
                   dishId: dish._id as Id<"dishes">,
                   count: listCount + 1,
                 });
               }}
-              className="p-2 rounded-xl text-coral-600 hover:bg-coral-200 transition-colors"
+              className="p-2 rounded-full hover:bg-white transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              addDish({ dishId: dish._id as Id<"dishes"> });
-              toast.success(`"${dish.name}" added to list`);
-            }}
-            className="p-2 rounded-xl bg-coral-100 text-coral-600 hover:bg-coral-200 transition-colors"
-            title="Add to shopping list"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
         )}
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/dish/$id", params: { id: dish._id } })}
+          className="w-7 h-7 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 flex-shrink-0"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
       </div>
-      {/* Details. */}
-      <p className="text-sm text-stone-500 mt-1">
-        {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
-      </p>
-      {dish.items.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {dish.items.slice(0, 4).map((item, i) => (
-            <span
-              key={i}
-              className="text-xs bg-warm-100 text-stone-600 px-2 py-0.5 rounded-full"
-            >
-              {item.ingredient?.name || "Unknown"}
-            </span>
-          ))}
-          {dish.items.length > 4 && (
-            <span className="text-xs text-stone-400">
-              +{dish.items.length - 4} more
-            </span>
-          )}
-        </div>
-      )}
-    </Link>
+
+      {/* Clickable area for details. */}
+      <button
+        type="button"
+        onClick={handleCardClick}
+        className="w-full text-left"
+      >
+        <p className="text-sm text-stone-500">
+          {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
+        </p>
+        {dish.items.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {dish.items.slice(0, 4).map((item, i) => (
+              <span
+                key={i}
+                className="text-xs bg-warm-100 text-stone-600 px-2 py-0.5 rounded-full"
+              >
+                {item.ingredient?.name || "Unknown"}
+              </span>
+            ))}
+            {dish.items.length > 4 && (
+              <span className="text-xs text-stone-400">
+                +{dish.items.length - 4} more
+              </span>
+            )}
+          </div>
+        )}
+      </button>
+    </div>
   );
 }
 
