@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
-import { Plus, Minus, Search, ChefHat, Pencil } from "lucide-react";
+import { Plus, Search, ChefHat, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -90,7 +90,6 @@ function DishCard({
 }) {
   const navigate = useNavigate();
   const addDish = useMutation(api.shoppingList.addDish);
-  const setDishCount = useMutation(api.shoppingList.setDishCount);
 
   const isInList = listCount > 0;
 
@@ -100,62 +99,33 @@ function DishCard({
   };
 
   return (
-    <div className={`card ${isInList ? "bg-sage-100" : ""}`}>
-      {/* Header row with name and controls. */}
-      <div className="flex items-center gap-2 mb-1">
-        <button
-          type="button"
-          onClick={handleCardClick}
-          className="flex-1 text-left"
-        >
-          <h3 className="font-semibold text-stone-800">{dish.name}</h3>
-        </button>
-        {isInList && (
-          <div className="flex items-center bg-white/50 rounded-full flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setDishCount({
-                  dishId: dish._id as Id<"dishes">,
-                  count: Math.max(0, listCount - 1),
-                });
-              }}
-              className="p-2 rounded-full hover:bg-white transition-colors"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-bold w-5 text-center">
-              {listCount}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setDishCount({
-                  dishId: dish._id as Id<"dishes">,
-                  count: listCount + 1,
-                });
-              }}
-              className="p-2 rounded-full hover:bg-white transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/dish/$id", params: { id: dish._id } })}
-          className="w-7 h-7 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 flex-shrink-0"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-      </div>
+    <div className="card relative">
+      {/* Quantity badge. */}
+      {isInList && (
+        <div className="absolute -top-2 -right-2 w-6 h-6 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
+          {listCount}
+        </div>
+      )}
 
-      {/* Clickable area for details. */}
+      {/* Edit button. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate({ to: "/dish/$id", params: { id: dish._id } });
+        }}
+        className="absolute -top-2 -left-2 w-6 h-6 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 z-10"
+      >
+        <Pencil className="w-3 h-3" />
+      </button>
+
+      {/* Clickable card content. */}
       <button
         type="button"
         onClick={handleCardClick}
         className="w-full text-left"
       >
+        <h3 className="font-semibold text-stone-800 mb-1">{dish.name}</h3>
         <p className="text-sm text-stone-500">
           {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
         </p>

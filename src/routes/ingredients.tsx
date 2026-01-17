@@ -259,7 +259,7 @@ function IngredientsPage() {
               <div key={ingredient._id} className="relative pt-1.5 px-1.5">
                 {/* Quantity badge. */}
                 {isInList && (
-                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-sage-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
+                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
                     {inListQuantity}
                   </div>
                 )}
@@ -282,8 +282,11 @@ function IngredientsPage() {
 
                 <button
                   type="button"
-                  onClick={() => addToList({ ingredientId: ingredient._id })}
-                  className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm ${isInList ? "bg-sage-100" : "bg-white"}`}
+                  onClick={() => {
+                    addToList({ ingredientId: ingredient._id });
+                    toast.success(`"${ingredient.name}" added to list`);
+                  }}
+                  className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm bg-white"
                 >
                   {/* Photo placeholder. */}
                   <div
