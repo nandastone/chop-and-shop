@@ -56,9 +56,10 @@ function ShoppingListPage() {
   type MiscItem = { id: string; name: string; storeId?: Id<"stores">; checked: boolean };
 
   // Calculate progress (exclude "have it" items from count).
+  // activeItems = ingredient items that are not excluded (marked as "have it at home")
   const activeItems = data.items.filter((item: { isExcluded: boolean }) => !item.isExcluded);
-  const activeMiscItems = data.miscItems.filter((item: MiscItem) => !item.checked);
-  const totalItems = activeItems.length + activeMiscItems.length;
+  // totalItems includes all active ingredient items + all misc items
+  const totalItems = activeItems.length + data.miscItems.length;
   const checkedItems =
     activeItems.filter((i: { isChecked: boolean }) => i.isChecked).length +
     data.miscItems.filter((item: MiscItem) => item.checked).length;
