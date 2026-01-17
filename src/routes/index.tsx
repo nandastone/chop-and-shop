@@ -65,7 +65,6 @@ function ShoppingListPage() {
   const checkedItems =
     activeItems.filter((i: { isChecked: boolean }) => i.isChecked).length +
     data.miscItems.filter((item: MiscItem) => item.checked).length;
-  const progress = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
 
   const isEmpty =
     data.selectedDishes.length === 0 && data.miscItems.length === 0;
@@ -101,16 +100,6 @@ function ShoppingListPage() {
           </div>
         )}
       </div>
-
-      {/* Progress bar. */}
-      {!isEmpty && (
-        <div className="h-2 bg-stone-200 rounded-full mb-6 overflow-hidden">
-          <div
-            className="h-full bg-sage-500 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
 
       {isEmpty ? (
         <EmptyState />
