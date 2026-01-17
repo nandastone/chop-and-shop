@@ -6,6 +6,8 @@ export default defineSchema({
   stores: defineTable({
     name: v.string(),
     sortOrder: v.number(),
+    color: v.optional(v.string()), // Hex color code for store branding.
+    imageId: v.optional(v.id("_storage")), // Convex file storage ID for store image.
   }),
 
   // Ingredients - global catalog with default store.

@@ -199,17 +199,32 @@ function IngredientsPage() {
           const count = ingredientCountByStore.get(store._id) || 0;
           if (count === 0) return null;
           const isSelected = storeFilter === store._id;
+          const storeColor = store.color;
           return (
             <button
               key={store._id}
               ref={isSelected ? selectedChipRef : undefined}
               onClick={() => setStoreFilter(store._id)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 isSelected
-                  ? "bg-coral-500 text-white"
-                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  ? "text-white"
+                  : "text-stone-600 hover:opacity-80"
               }`}
+              style={{
+                backgroundColor: isSelected
+                  ? storeColor || "#f97352"
+                  : storeColor
+                    ? `${storeColor}20`
+                    : "#f5f5f4",
+                color: isSelected ? "white" : storeColor || "#57534e",
+              }}
             >
+              {storeColor && !isSelected && (
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: storeColor }}
+                />
+              )}
               {store.name} ({count})
             </button>
           );
