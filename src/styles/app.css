@@ -69,7 +69,7 @@
 
   /* Card component. */
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-stone-100 p-4;
+    @apply bg-white rounded-2xl shadow-sm p-4;
   }
 
   /* Chip/tag component. */

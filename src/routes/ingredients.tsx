@@ -259,7 +259,7 @@ function IngredientsPage() {
               <div key={ingredient._id} className="relative pt-1.5 px-1.5">
                 {/* Quantity badge. */}
                 {isInList && (
-                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-sage-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
+                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
                     {inListQuantity}
                   </div>
                 )}
@@ -282,33 +282,22 @@ function IngredientsPage() {
 
                 <button
                   type="button"
-                  onClick={() => addToList({ ingredientId: ingredient._id })}
-                  className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 ${
-                    isInList
-                      ? "bg-sage-100 border-sage-500"
-                      : "bg-white border-stone-200 hover:border-sage-300"
-                  }`}
+                  onClick={() => {
+                    addToList({ ingredientId: ingredient._id });
+                    toast.success(`"${ingredient.name}" added to list`);
+                  }}
+                  className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm bg-white"
                 >
                   {/* Photo placeholder. */}
                   <div
-                    className={`w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 ${
-                      isInList
-                        ? "bg-sage-200"
-                        : "bg-gradient-to-br from-coral-100 to-warm-200"
-                    }`}
+                    className="w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-coral-100 to-warm-200"
                   >
-                    <Package
-                      className={`w-4 h-4 ${
-                        isInList ? "text-sage-600" : "text-coral-300"
-                      }`}
-                    />
+                    <Package className="w-4 h-4 text-coral-300" />
                   </div>
 
                   {/* Name. */}
                   <span
-                    className={`text-[11px] font-medium text-center truncate w-full ${
-                      isInList ? "text-sage-700" : "text-stone-700"
-                    }`}
+                    className="text-[11px] font-medium text-center truncate w-full text-stone-700"
                   >
                     {ingredient.name}
                   </span>
