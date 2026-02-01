@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
-import { api } from "../../convex/_generated/api";
-import { Plus, Store, Pencil, Trash2, X, Check, Package, Upload, ImageIcon } from "lucide-react";
+import { api } from "../../../convex/_generated/api";
+import { Plus, Store, Pencil, Trash2, X, Check, Package, Upload } from "lucide-react";
 import { useState, useRef } from "react";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useProfileId } from "~/contexts/ProfileContext";
 
 // Predefined color palette for stores.
 const COLOR_PALETTE = [
@@ -21,14 +22,15 @@ const COLOR_PALETTE = [
   "#3b82f6", // blue
 ];
 
-export const Route = createFileRoute("/stores")({
+export const Route = createFileRoute("/$profileId/stores")({
   component: StoresPage,
 });
 
 function StoresPage() {
-  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
+  const profileId = useProfileId();
+  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, { profileId }));
   const { data: ingredients } = useSuspenseQuery(
-    convexQuery(api.ingredients.list, {})
+    convexQuery(api.ingredients.list, { profileId })
   );
 
   // Count ingredients per store.
@@ -47,9 +49,6 @@ function StoresPage() {
   const removeStore = useMutation(api.stores.remove);
   const reorderStores = useMutation(api.stores.reorder);
   const generateUploadUrl = useMutation(api.stores.generateUploadUrl);
-  const updateImage = useMutation(api.stores.updateImage);
-  const updateColor = useMutation(api.stores.updateColor);
-  const removeImage = useMutation(api.stores.removeImage);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
@@ -153,6 +152,7 @@ function StoresPage() {
   const handleAddStore = async () => {
     if (!newStoreName.trim()) return;
     await createStore({
+      profileId,
       name: newStoreName.trim(),
       color: newStoreColor,
       imageId: newStoreImageId,
@@ -177,7 +177,7 @@ function StoresPage() {
   };
 
   const handleDeleteStore = async (id: Id<"stores">) => {
-    await removeStore({ id });
+    await removeStore({ id, profileId });
     setDeleteConfirm(null);
   };
 
@@ -541,7 +541,8 @@ function StoresPage() {
                 </div>
               ) : (
                 <Link
-                  to="/ingredients"
+                  to="/$profileId/ingredients"
+                  params={{ profileId }}
                   search={{ store: store._id }}
                   className="card flex items-center gap-3 hover:bg-stone-50 transition-colors"
                 >

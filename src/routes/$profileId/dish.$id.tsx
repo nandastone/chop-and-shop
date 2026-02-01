@@ -2,32 +2,40 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
-import { api } from "../../convex/_generated/api";
-import { ArrowLeft, Search, Package, X, Plus } from "lucide-react";
-import { useState } from "react";
+import { api } from "../../../convex/_generated/api";
+import { ArrowLeft, Search, Package, X, Trash2, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useProfileId } from "~/contexts/ProfileContext";
 
-export const Route = createFileRoute("/dish/new")({
-  component: NewDishPage,
+export const Route = createFileRoute("/$profileId/dish/$id")({
+  component: EditDishPage,
 });
 
-function NewDishPage() {
+function EditDishPage() {
+  const profileId = useProfileId();
+  const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { data: allIngredients } = useSuspenseQuery(
-    convexQuery(api.ingredients.list, {})
-  );
-  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
 
-  const createDish = useMutation(api.dishes.create);
+  const { data: dish } = useSuspenseQuery(
+    convexQuery(api.dishes.get, { id: id as Id<"dishes"> })
+  );
+  const { data: allIngredients } = useSuspenseQuery(
+    convexQuery(api.ingredients.list, { profileId })
+  );
+  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, { profileId }));
+
+  const updateDish = useMutation(api.dishes.update);
+  const deleteDish = useMutation(api.dishes.remove);
   const createIngredient = useMutation(api.ingredients.create);
-  const addDishToList = useMutation(api.shoppingList.addDish);
 
   const [name, setName] = useState("");
   const [items, setItems] = useState<
     Map<Id<"ingredients">, { name: string; quantity: number }>
   >(new Map());
   const [searchQuery, setSearchQuery] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newIngredientName, setNewIngredientName] = useState("");
   const [newIngredientStore, setNewIngredientStore] = useState<string>("");
@@ -49,6 +57,7 @@ function NewDishPage() {
     }
 
     const newId = await createIngredient({
+      profileId,
       name: ingredientName,
       storeId: newIngredientStore
         ? (newIngredientStore as Id<"stores">)
@@ -63,19 +72,54 @@ function NewDishPage() {
     setShowAddModal(false);
   };
 
+  // Initialize form with dish data.
+  useEffect(() => {
+    if (dish) {
+      setName(dish.name);
+      const ingredientMap = new Map(
+        allIngredients.map((i) => [i._id, i.name])
+      );
+      const newItems = new Map<
+        Id<"ingredients">,
+        { name: string; quantity: number }
+      >();
+      for (const item of dish.items) {
+        const ingredientName = ingredientMap.get(item.ingredientId) || "Unknown";
+        newItems.set(item.ingredientId, {
+          name: ingredientName,
+          quantity: parseInt(item.quantity) || 1,
+        });
+      }
+      setItems(newItems);
+    }
+  }, [dish, allIngredients]);
+
+  if (!dish) {
+    return (
+      <main className="p-4">
+        <p className="text-stone-500">Dish not found</p>
+      </main>
+    );
+  }
+
   const handleSave = async () => {
     if (!name.trim() || items.size === 0) return;
-    const dishId = await createDish({
+    await updateDish({
+      id: id as Id<"dishes">,
       name: name.trim(),
       items: Array.from(items.entries()).map(([ingredientId, { quantity }]) => ({
         ingredientId,
         quantity: String(quantity),
       })),
     });
-    // Auto-add the new dish to the shopping list.
-    await addDishToList({ dishId });
-    toast.success(`"${name.trim()}" added to list`);
-    navigate({ to: "/" });
+    toast.success("Dish updated");
+    navigate({ to: "/$profileId/dishes", params: { profileId } });
+  };
+
+  const handleDelete = async () => {
+    await deleteDish({ id: id as Id<"dishes"> });
+    toast.success("Dish deleted");
+    navigate({ to: "/$profileId/dishes", params: { profileId } });
   };
 
   const handleTapIngredient = (
@@ -115,12 +159,18 @@ function NewDishPage() {
       {/* Header. */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate({ to: "/dishes" })}
+          onClick={() => navigate({ to: "/$profileId/dishes", params: { profileId } })}
           className="p-2 -ml-2 rounded-xl hover:bg-stone-100"
         >
           <ArrowLeft className="w-6 h-6 text-stone-600" />
         </button>
-        <h1 className="text-xl font-bold text-stone-800">New Dish</h1>
+        <h1 className="text-xl font-bold text-stone-800 flex-1">Edit Dish</h1>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="p-2 rounded-xl text-red-500 hover:bg-red-50"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Dish name. */}
@@ -131,7 +181,6 @@ function NewDishPage() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Dish name (e.g., Burritos)"
           className="input text-lg font-medium"
-          autoFocus
         />
       </div>
 
@@ -259,13 +308,42 @@ function NewDishPage() {
         disabled={!name.trim() || items.size === 0}
         className="w-full btn-primary flex items-center justify-center gap-2"
       >
-        <span>Save Dish</span>
+        <span>Save Changes</span>
         {items.size > 0 && (
           <span className="bg-white/30 px-2 py-0.5 rounded-full text-sm">
             {totalItems}
           </span>
         )}
       </button>
+
+      {/* Delete confirmation modal. */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold text-stone-800 mb-2">
+              Delete Dish?
+            </h2>
+            <p className="text-stone-600 mb-6">
+              Are you sure you want to delete "{name}"? This action cannot be
+              undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 bg-red-500 text-white font-medium px-4 py-2.5 rounded-xl hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add ingredient modal. */}
       {showAddModal && (

@@ -9,26 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StoresRouteImport } from './routes/stores'
-import { Route as IngredientsRouteImport } from './routes/ingredients'
-import { Route as DishesRouteImport } from './routes/dishes'
+import { Route as ProfileIdRouteImport } from './routes/$profileId'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DishNewRouteImport } from './routes/dish.new'
-import { Route as DishIdRouteImport } from './routes/dish.$id'
+import { Route as ProfileIdIndexRouteImport } from './routes/$profileId/index'
+import { Route as ProfileIdStoresRouteImport } from './routes/$profileId/stores'
+import { Route as ProfileIdIngredientsRouteImport } from './routes/$profileId/ingredients'
+import { Route as ProfileIdDishesRouteImport } from './routes/$profileId/dishes'
+import { Route as ProfileIdDishNewRouteImport } from './routes/$profileId/dish.new'
+import { Route as ProfileIdDishIdRouteImport } from './routes/$profileId/dish.$id'
 
-const StoresRoute = StoresRouteImport.update({
-  id: '/stores',
-  path: '/stores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IngredientsRoute = IngredientsRouteImport.update({
-  id: '/ingredients',
-  path: '/ingredients',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DishesRoute = DishesRouteImport.update({
-  id: '/dishes',
-  path: '/dishes',
+const ProfileIdRoute = ProfileIdRouteImport.update({
+  id: '/$profileId',
+  path: '/$profileId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -36,93 +28,111 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DishNewRoute = DishNewRouteImport.update({
+const ProfileIdIndexRoute = ProfileIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProfileIdRoute,
+} as any)
+const ProfileIdStoresRoute = ProfileIdStoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => ProfileIdRoute,
+} as any)
+const ProfileIdIngredientsRoute = ProfileIdIngredientsRouteImport.update({
+  id: '/ingredients',
+  path: '/ingredients',
+  getParentRoute: () => ProfileIdRoute,
+} as any)
+const ProfileIdDishesRoute = ProfileIdDishesRouteImport.update({
+  id: '/dishes',
+  path: '/dishes',
+  getParentRoute: () => ProfileIdRoute,
+} as any)
+const ProfileIdDishNewRoute = ProfileIdDishNewRouteImport.update({
   id: '/dish/new',
   path: '/dish/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ProfileIdRoute,
 } as any)
-const DishIdRoute = DishIdRouteImport.update({
+const ProfileIdDishIdRoute = ProfileIdDishIdRouteImport.update({
   id: '/dish/$id',
   path: '/dish/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ProfileIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dishes': typeof DishesRoute
-  '/ingredients': typeof IngredientsRoute
-  '/stores': typeof StoresRoute
-  '/dish/$id': typeof DishIdRoute
-  '/dish/new': typeof DishNewRoute
+  '/$profileId': typeof ProfileIdRouteWithChildren
+  '/$profileId/dishes': typeof ProfileIdDishesRoute
+  '/$profileId/ingredients': typeof ProfileIdIngredientsRoute
+  '/$profileId/stores': typeof ProfileIdStoresRoute
+  '/$profileId/': typeof ProfileIdIndexRoute
+  '/$profileId/dish/$id': typeof ProfileIdDishIdRoute
+  '/$profileId/dish/new': typeof ProfileIdDishNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dishes': typeof DishesRoute
-  '/ingredients': typeof IngredientsRoute
-  '/stores': typeof StoresRoute
-  '/dish/$id': typeof DishIdRoute
-  '/dish/new': typeof DishNewRoute
+  '/$profileId/dishes': typeof ProfileIdDishesRoute
+  '/$profileId/ingredients': typeof ProfileIdIngredientsRoute
+  '/$profileId/stores': typeof ProfileIdStoresRoute
+  '/$profileId': typeof ProfileIdIndexRoute
+  '/$profileId/dish/$id': typeof ProfileIdDishIdRoute
+  '/$profileId/dish/new': typeof ProfileIdDishNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dishes': typeof DishesRoute
-  '/ingredients': typeof IngredientsRoute
-  '/stores': typeof StoresRoute
-  '/dish/$id': typeof DishIdRoute
-  '/dish/new': typeof DishNewRoute
+  '/$profileId': typeof ProfileIdRouteWithChildren
+  '/$profileId/dishes': typeof ProfileIdDishesRoute
+  '/$profileId/ingredients': typeof ProfileIdIngredientsRoute
+  '/$profileId/stores': typeof ProfileIdStoresRoute
+  '/$profileId/': typeof ProfileIdIndexRoute
+  '/$profileId/dish/$id': typeof ProfileIdDishIdRoute
+  '/$profileId/dish/new': typeof ProfileIdDishNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dishes'
-    | '/ingredients'
-    | '/stores'
-    | '/dish/$id'
-    | '/dish/new'
+    | '/$profileId'
+    | '/$profileId/dishes'
+    | '/$profileId/ingredients'
+    | '/$profileId/stores'
+    | '/$profileId/'
+    | '/$profileId/dish/$id'
+    | '/$profileId/dish/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dishes' | '/ingredients' | '/stores' | '/dish/$id' | '/dish/new'
+  to:
+    | '/'
+    | '/$profileId/dishes'
+    | '/$profileId/ingredients'
+    | '/$profileId/stores'
+    | '/$profileId'
+    | '/$profileId/dish/$id'
+    | '/$profileId/dish/new'
   id:
     | '__root__'
     | '/'
-    | '/dishes'
-    | '/ingredients'
-    | '/stores'
-    | '/dish/$id'
-    | '/dish/new'
+    | '/$profileId'
+    | '/$profileId/dishes'
+    | '/$profileId/ingredients'
+    | '/$profileId/stores'
+    | '/$profileId/'
+    | '/$profileId/dish/$id'
+    | '/$profileId/dish/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DishesRoute: typeof DishesRoute
-  IngredientsRoute: typeof IngredientsRoute
-  StoresRoute: typeof StoresRoute
-  DishIdRoute: typeof DishIdRoute
-  DishNewRoute: typeof DishNewRoute
+  ProfileIdRoute: typeof ProfileIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/stores': {
-      id: '/stores'
-      path: '/stores'
-      fullPath: '/stores'
-      preLoaderRoute: typeof StoresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ingredients': {
-      id: '/ingredients'
-      path: '/ingredients'
-      fullPath: '/ingredients'
-      preLoaderRoute: typeof IngredientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dishes': {
-      id: '/dishes'
-      path: '/dishes'
-      fullPath: '/dishes'
-      preLoaderRoute: typeof DishesRouteImport
+    '/$profileId': {
+      id: '/$profileId'
+      path: '/$profileId'
+      fullPath: '/$profileId'
+      preLoaderRoute: typeof ProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -132,30 +142,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dish/new': {
-      id: '/dish/new'
-      path: '/dish/new'
-      fullPath: '/dish/new'
-      preLoaderRoute: typeof DishNewRouteImport
-      parentRoute: typeof rootRouteImport
+    '/$profileId/': {
+      id: '/$profileId/'
+      path: '/'
+      fullPath: '/$profileId/'
+      preLoaderRoute: typeof ProfileIdIndexRouteImport
+      parentRoute: typeof ProfileIdRoute
     }
-    '/dish/$id': {
-      id: '/dish/$id'
+    '/$profileId/stores': {
+      id: '/$profileId/stores'
+      path: '/stores'
+      fullPath: '/$profileId/stores'
+      preLoaderRoute: typeof ProfileIdStoresRouteImport
+      parentRoute: typeof ProfileIdRoute
+    }
+    '/$profileId/ingredients': {
+      id: '/$profileId/ingredients'
+      path: '/ingredients'
+      fullPath: '/$profileId/ingredients'
+      preLoaderRoute: typeof ProfileIdIngredientsRouteImport
+      parentRoute: typeof ProfileIdRoute
+    }
+    '/$profileId/dishes': {
+      id: '/$profileId/dishes'
+      path: '/dishes'
+      fullPath: '/$profileId/dishes'
+      preLoaderRoute: typeof ProfileIdDishesRouteImport
+      parentRoute: typeof ProfileIdRoute
+    }
+    '/$profileId/dish/new': {
+      id: '/$profileId/dish/new'
+      path: '/dish/new'
+      fullPath: '/$profileId/dish/new'
+      preLoaderRoute: typeof ProfileIdDishNewRouteImport
+      parentRoute: typeof ProfileIdRoute
+    }
+    '/$profileId/dish/$id': {
+      id: '/$profileId/dish/$id'
       path: '/dish/$id'
-      fullPath: '/dish/$id'
-      preLoaderRoute: typeof DishIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$profileId/dish/$id'
+      preLoaderRoute: typeof ProfileIdDishIdRouteImport
+      parentRoute: typeof ProfileIdRoute
     }
   }
 }
 
+interface ProfileIdRouteChildren {
+  ProfileIdDishesRoute: typeof ProfileIdDishesRoute
+  ProfileIdIngredientsRoute: typeof ProfileIdIngredientsRoute
+  ProfileIdStoresRoute: typeof ProfileIdStoresRoute
+  ProfileIdIndexRoute: typeof ProfileIdIndexRoute
+  ProfileIdDishIdRoute: typeof ProfileIdDishIdRoute
+  ProfileIdDishNewRoute: typeof ProfileIdDishNewRoute
+}
+
+const ProfileIdRouteChildren: ProfileIdRouteChildren = {
+  ProfileIdDishesRoute: ProfileIdDishesRoute,
+  ProfileIdIngredientsRoute: ProfileIdIngredientsRoute,
+  ProfileIdStoresRoute: ProfileIdStoresRoute,
+  ProfileIdIndexRoute: ProfileIdIndexRoute,
+  ProfileIdDishIdRoute: ProfileIdDishIdRoute,
+  ProfileIdDishNewRoute: ProfileIdDishNewRoute,
+}
+
+const ProfileIdRouteWithChildren = ProfileIdRoute._addFileChildren(
+  ProfileIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DishesRoute: DishesRoute,
-  IngredientsRoute: IngredientsRoute,
-  StoresRoute: StoresRoute,
-  DishIdRoute: DishIdRoute,
-  DishNewRoute: DishNewRoute,
+  ProfileIdRoute: ProfileIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,14 +1,11 @@
 import {
   HeadContent,
-  Link,
   Outlet,
   Scripts,
   createRootRouteWithContext,
-  useRouterState,
 } from "@tanstack/react-router";
 import * as React from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { UtensilsCrossed, ShoppingCart, Store, Package } from "lucide-react";
 import { Toaster } from "sonner";
 import appCss from "~/styles/app.css?url";
 
@@ -51,7 +48,6 @@ function RootComponent() {
   return (
     <RootDocument>
       <Outlet />
-      <BottomNav />
       <Toaster position="top-center" richColors />
     </RootDocument>
   );
@@ -68,35 +64,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
-}
-
-function BottomNav() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  const navItems = [
-    { to: "/", icon: ShoppingCart, label: "List" },
-    { to: "/dishes", icon: UtensilsCrossed, label: "Dishes" },
-    { to: "/ingredients", icon: Package, label: "Ingredients" },
-    { to: "/stores", icon: Store, label: "Stores" },
-  ];
-
-  return (
-    <nav className="bottom-nav">
-      {navItems.map((item) => {
-        const isActive =
-          item.to === "/" ? pathname === "/" : pathname.startsWith(item.to) && item.to !== "/";
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`bottom-nav-item ${isActive ? "bottom-nav-item-active" : ""}`}
-          >
-            <item.icon className="w-6 h-6" />
-            <span className="text-xs font-medium">{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
   );
 }

@@ -2,13 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { Plus, Search, Pencil, Trash2, X, Package } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useProfileId } from "~/contexts/ProfileContext";
 
-export const Route = createFileRoute("/ingredients")({
+export const Route = createFileRoute("/$profileId/ingredients")({
   component: IngredientsPage,
   validateSearch: (search: Record<string, unknown>) => ({
     store: (search.store as string) || undefined,
@@ -16,15 +17,16 @@ export const Route = createFileRoute("/ingredients")({
 });
 
 function IngredientsPage() {
+  const profileId = useProfileId();
   const { store: storeFilter } = Route.useSearch();
   const navigate = useNavigate();
 
   const { data: ingredients } = useSuspenseQuery(
-    convexQuery(api.ingredients.list, {})
+    convexQuery(api.ingredients.list, { profileId })
   );
-  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, {}));
+  const { data: stores } = useSuspenseQuery(convexQuery(api.stores.list, { profileId }));
   const { data: shoppingList } = useSuspenseQuery(
-    convexQuery(api.shoppingList.get, {})
+    convexQuery(api.shoppingList.get, { profileId })
   );
 
   const createIngredient = useMutation(api.ingredients.create);
@@ -36,8 +38,9 @@ function IngredientsPage() {
 
   const setStoreFilter = (store: string | undefined) => {
     navigate({
-      to: "/ingredients",
-      search: store ? { store } : {},
+      to: "/$profileId/ingredients",
+      params: { profileId },
+      search: { store },
       replace: true,
     });
   };
@@ -70,7 +73,7 @@ function IngredientsPage() {
   const [editError, setEditError] = useState("");
 
   // Build a map of manual ingredient quantities.
-  const manualQuantities = new Map(
+  const manualQuantities = new Map<Id<"ingredients">, number>(
     (shoppingList.manualIngredients || []).map(
       (i: { ingredientId: Id<"ingredients">; quantity: number }) => [i.ingredientId, i.quantity]
     )
@@ -115,6 +118,7 @@ function IngredientsPage() {
     }
 
     await createIngredient({
+      profileId,
       name: newName.trim(),
       storeId: newStore ? (newStore as Id<"stores">) : undefined,
     });
@@ -139,6 +143,7 @@ function IngredientsPage() {
     }
 
     await updateIngredient({
+      profileId,
       id: editingIngredient.id,
       name: editingIngredient.name.trim(),
       storeId: editingIngredient.storeId,
@@ -148,7 +153,7 @@ function IngredientsPage() {
   };
 
   const handleDelete = async (id: Id<"ingredients">) => {
-    await deleteIngredient({ id });
+    await deleteIngredient({ profileId, id });
     setDeleteConfirm(null);
   };
 
@@ -283,7 +288,7 @@ function IngredientsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    addToList({ ingredientId: ingredient._id });
+                    addToList({ profileId, ingredientId: ingredient._id });
                     toast.success(`"${ingredient.name}" added to list`);
                   }}
                   className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm bg-white"

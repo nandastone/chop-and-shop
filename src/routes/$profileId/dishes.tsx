@@ -2,27 +2,29 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { Plus, Search, ChefHat, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { useProfileId } from "~/contexts/ProfileContext";
 
-export const Route = createFileRoute("/dishes")({
+export const Route = createFileRoute("/$profileId/dishes")({
   component: DishesPage,
 });
 
 function DishesPage() {
+  const profileId = useProfileId();
   const { data: dishes } = useSuspenseQuery(
-    convexQuery(api.dishes.listWithIngredients, {})
+    convexQuery(api.dishes.listWithIngredients, { profileId })
   );
   const { data: shoppingList } = useSuspenseQuery(
-    convexQuery(api.shoppingList.get, {})
+    convexQuery(api.shoppingList.get, { profileId })
   );
   const [search, setSearch] = useState("");
 
   // Build a map of dish ID -> count in shopping list.
-  const dishCounts = new Map(
+  const dishCounts = new Map<Id<"dishes">, number>(
     shoppingList.selectedDishes.map((d: { dishId: Id<"dishes">; count: number }) => [d.dishId, d.count])
   );
 
@@ -39,7 +41,8 @@ function DishesPage() {
           <p className="text-sm text-stone-500">Your meal library</p>
         </div>
         <Link
-          to="/dish/new"
+          to="/$profileId/dish/new"
+          params={{ profileId }}
           className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -61,11 +64,11 @@ function DishesPage() {
 
       {/* Dish list. */}
       {filteredDishes.length === 0 ? (
-        <EmptyState hasSearch={search.length > 0} />
+        <EmptyState hasSearch={search.length > 0} profileId={profileId} />
       ) : (
         <div className="space-y-3">
           {filteredDishes.map((dish) => (
-            <DishCard key={dish._id} dish={dish} listCount={dishCounts.get(dish._id) || 0} />
+            <DishCard key={dish._id} dish={dish} listCount={dishCounts.get(dish._id) || 0} profileId={profileId} />
           ))}
         </div>
       )}
@@ -76,6 +79,7 @@ function DishesPage() {
 function DishCard({
   dish,
   listCount,
+  profileId,
 }: {
   dish: {
     _id: string;
@@ -87,6 +91,7 @@ function DishCard({
     }>;
   };
   listCount: number;
+  profileId: string;
 }) {
   const navigate = useNavigate();
   const addDish = useMutation(api.shoppingList.addDish);
@@ -94,7 +99,7 @@ function DishCard({
   const isInList = listCount > 0;
 
   const handleCardClick = () => {
-    addDish({ dishId: dish._id as Id<"dishes"> });
+    addDish({ profileId, dishId: dish._id as Id<"dishes"> });
     toast.success(`"${dish.name}" added to list`);
   };
 
@@ -112,7 +117,7 @@ function DishCard({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          navigate({ to: "/dish/$id", params: { id: dish._id } });
+          navigate({ to: "/$profileId/dish/$id", params: { profileId, id: dish._id } });
         }}
         className="absolute -top-2 -left-2 w-6 h-6 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 z-10"
       >
@@ -151,7 +156,7 @@ function DishCard({
   );
 }
 
-function EmptyState({ hasSearch }: { hasSearch: boolean }) {
+function EmptyState({ hasSearch, profileId }: { hasSearch: boolean; profileId: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 bg-coral-100 rounded-full flex items-center justify-center mb-4">
@@ -170,7 +175,7 @@ function EmptyState({ hasSearch }: { hasSearch: boolean }) {
           <p className="text-sm text-stone-500 mb-4">
             Add your first dish to get started
           </p>
-          <Link to="/dish/new" className="btn-primary">
+          <Link to="/$profileId/dish/new" params={{ profileId }} className="btn-primary">
             Add your first dish
           </Link>
         </>

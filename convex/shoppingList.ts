@@ -5,6 +5,7 @@ import type { Id } from "./_generated/dataModel";
 // Type for the shopping list document.
 type ShoppingListDoc = {
   _id: Id<"shoppingList">;
+  profileId: string;
   selectedDishes: Array<{ dishId: Id<"dishes">; count: number }>;
   manualIngredients?: Array<{ ingredientId: Id<"ingredients">; quantity: number }>;
   excludedIngredientIds: Id<"ingredients">[];
@@ -32,19 +33,27 @@ const emptyList = {
 };
 
 // Get the shopping list for reading (queries).
-async function getListForRead(ctx: { db: any }) {
-  const existing = await ctx.db.query("shoppingList").first();
-  return existing || { _id: null, ...emptyList };
+async function getListForRead(ctx: { db: any }, profileId: string) {
+  const existing = await ctx.db
+    .query("shoppingList")
+    .withIndex("by_profile", (q: any) => q.eq("profileId", profileId))
+    .first();
+  return existing || { _id: null, profileId, ...emptyList };
 }
 
 // Get or create the shopping list for writing (mutations).
-async function getOrCreateList(ctx: {
-  db: any;
-}): Promise<ShoppingListDoc> {
-  const existing = await ctx.db.query("shoppingList").first();
+async function getOrCreateList(
+  ctx: { db: any },
+  profileId: string
+): Promise<ShoppingListDoc> {
+  const existing = await ctx.db
+    .query("shoppingList")
+    .withIndex("by_profile", (q: any) => q.eq("profileId", profileId))
+    .first();
   if (existing) return existing;
 
   const id = await ctx.db.insert("shoppingList", {
+    profileId,
     selectedDishes: [],
     manualIngredients: [],
     excludedIngredientIds: [],
@@ -56,20 +65,29 @@ async function getOrCreateList(ctx: {
 
 // Get the current shopping list.
 export const get = query({
-  args: {},
-  handler: async (ctx) => {
-    return await getListForRead(ctx);
+  args: { profileId: v.string() },
+  handler: async (ctx, args) => {
+    return await getListForRead(ctx, args.profileId);
   },
 });
 
 // Get the aggregated shopping list with all details.
 export const getAggregated = query({
-  args: {},
-  handler: async (ctx) => {
-    const list = await getListForRead(ctx);
-    const dishes = await ctx.db.query("dishes").collect();
-    const ingredients = await ctx.db.query("ingredients").collect();
-    const stores = await ctx.db.query("stores").collect();
+  args: { profileId: v.string() },
+  handler: async (ctx, args) => {
+    const list = await getListForRead(ctx, args.profileId);
+    const dishes = await ctx.db
+      .query("dishes")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
+    const ingredients = await ctx.db
+      .query("ingredients")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
+    const stores = await ctx.db
+      .query("stores")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
 
     const dishMap = new Map(dishes.map((d: any) => [d._id, d]));
     const ingredientMap = new Map(ingredients.map((i: any) => [i._id, i]));
@@ -193,9 +211,9 @@ export const getAggregated = query({
 
 // Add a dish to the list.
 export const addDish = mutation({
-  args: { dishId: v.id("dishes") },
+  args: { profileId: v.string(), dishId: v.id("dishes") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const existing = list.selectedDishes.find(
       (d: { dishId: Id<"dishes">; count: number }) => d.dishId === args.dishId
     );
@@ -221,9 +239,9 @@ export const addDish = mutation({
 
 // Remove a dish from the list.
 export const removeDish = mutation({
-  args: { dishId: v.id("dishes") },
+  args: { profileId: v.string(), dishId: v.id("dishes") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const updated = list.selectedDishes.filter(
       (d: { dishId: Id<"dishes">; count: number }) => d.dishId !== args.dishId
     );
@@ -233,9 +251,9 @@ export const removeDish = mutation({
 
 // Set dish count.
 export const setDishCount = mutation({
-  args: { dishId: v.id("dishes"), count: v.number() },
+  args: { profileId: v.string(), dishId: v.id("dishes"), count: v.number() },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     if (args.count <= 0) {
       const updated = list.selectedDishes.filter(
         (d: { dishId: Id<"dishes">; count: number }) => d.dishId !== args.dishId
@@ -265,9 +283,9 @@ export const setDishCount = mutation({
 
 // Exclude an ingredient (already have it).
 export const excludeIngredient = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     if (!list.excludedIngredientIds.includes(args.ingredientId)) {
       await ctx.db.patch(list._id, {
         excludedIngredientIds: [
@@ -281,9 +299,9 @@ export const excludeIngredient = mutation({
 
 // Include an ingredient (undo exclude).
 export const includeIngredient = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     await ctx.db.patch(list._id, {
       excludedIngredientIds: list.excludedIngredientIds.filter(
         (id: Id<"ingredients">) => id !== args.ingredientId
@@ -294,9 +312,9 @@ export const includeIngredient = mutation({
 
 // Check an item (bought).
 export const checkItem = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     if (!list.checkedIngredientIds.includes(args.ingredientId)) {
       await ctx.db.patch(list._id, {
         checkedIngredientIds: [
@@ -310,9 +328,9 @@ export const checkItem = mutation({
 
 // Uncheck an item.
 export const uncheckItem = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     await ctx.db.patch(list._id, {
       checkedIngredientIds: list.checkedIngredientIds.filter(
         (id: Id<"ingredients">) => id !== args.ingredientId
@@ -323,9 +341,9 @@ export const uncheckItem = mutation({
 
 // Toggle item checked state.
 export const toggleItem = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const isChecked = list.checkedIngredientIds.includes(args.ingredientId);
     if (isChecked) {
       await ctx.db.patch(list._id, {
@@ -347,11 +365,12 @@ export const toggleItem = mutation({
 // Add a misc item.
 export const addMiscItem = mutation({
   args: {
+    profileId: v.string(),
     name: v.string(),
     storeId: v.optional(v.id("stores")),
   },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const id = crypto.randomUUID();
     await ctx.db.patch(list._id, {
       miscItems: [
@@ -365,9 +384,9 @@ export const addMiscItem = mutation({
 
 // Remove a misc item.
 export const removeMiscItem = mutation({
-  args: { itemId: v.string() },
+  args: { profileId: v.string(), itemId: v.string() },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     await ctx.db.patch(list._id, {
       miscItems: list.miscItems.filter(
         (item: { id: string }) => item.id !== args.itemId
@@ -378,9 +397,9 @@ export const removeMiscItem = mutation({
 
 // Toggle misc item checked.
 export const toggleMiscItem = mutation({
-  args: { itemId: v.string() },
+  args: { profileId: v.string(), itemId: v.string() },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     await ctx.db.patch(list._id, {
       miscItems: list.miscItems.map(
         (item: {
@@ -397,9 +416,9 @@ export const toggleMiscItem = mutation({
 
 // Add a manual ingredient to the list.
 export const addManualIngredient = mutation({
-  args: { ingredientId: v.id("ingredients"), quantity: v.optional(v.number()) },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients"), quantity: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const manualIngredients = list.manualIngredients || [];
     const existing = manualIngredients.find(
       (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
@@ -429,9 +448,9 @@ export const addManualIngredient = mutation({
 
 // Remove a manual ingredient from the list.
 export const removeManualIngredient = mutation({
-  args: { ingredientId: v.id("ingredients") },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients") },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const manualIngredients = list.manualIngredients || [];
     const updated = manualIngredients.filter(
       (i: { ingredientId: Id<"ingredients">; quantity: number }) =>
@@ -443,9 +462,9 @@ export const removeManualIngredient = mutation({
 
 // Set manual ingredient quantity.
 export const setManualIngredientQuantity = mutation({
-  args: { ingredientId: v.id("ingredients"), quantity: v.number() },
+  args: { profileId: v.string(), ingredientId: v.id("ingredients"), quantity: v.number() },
   handler: async (ctx, args) => {
-    const list = await getOrCreateList(ctx);
+    const list = await getOrCreateList(ctx, args.profileId);
     const manualIngredients = list.manualIngredients || [];
 
     if (args.quantity <= 0) {
@@ -482,9 +501,9 @@ export const setManualIngredientQuantity = mutation({
 
 // Clear the entire list.
 export const clear = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const list = await getOrCreateList(ctx);
+  args: { profileId: v.string() },
+  handler: async (ctx, args) => {
+    const list = await getOrCreateList(ctx, args.profileId);
     await ctx.db.patch(list._id, {
       selectedDishes: [],
       manualIngredients: [],

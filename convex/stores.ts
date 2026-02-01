@@ -3,9 +3,12 @@ import { mutation, query } from "./_generated/server";
 
 // Get all stores sorted by sortOrder, with image URLs.
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const stores = await ctx.db.query("stores").collect();
+  args: { profileId: v.string() },
+  handler: async (ctx, args) => {
+    const stores = await ctx.db
+      .query("stores")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
     const storesWithImages = await Promise.all(
       stores.map(async (store) => ({
         ...store,
@@ -27,17 +30,22 @@ export const generateUploadUrl = mutation({
 // Create a new store.
 export const create = mutation({
   args: {
+    profileId: v.string(),
     name: v.string(),
     color: v.optional(v.string()),
     imageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    const existing = await ctx.db.query("stores").collect();
+    const existing = await ctx.db
+      .query("stores")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
     const maxOrder = existing.reduce(
       (max, s) => Math.max(max, s.sortOrder),
       -1
     );
     return await ctx.db.insert("stores", {
+      profileId: args.profileId,
       name: args.name,
       sortOrder: maxOrder + 1,
       color: args.color,
@@ -101,7 +109,7 @@ export const removeImage = mutation({
 
 // Delete a store.
 export const remove = mutation({
-  args: { id: v.id("stores") },
+  args: { id: v.id("stores"), profileId: v.string() },
   handler: async (ctx, args) => {
     const store = await ctx.db.get(args.id);
 
@@ -111,7 +119,10 @@ export const remove = mutation({
     }
 
     // Clear store from any ingredients that reference it.
-    const ingredients = await ctx.db.query("ingredients").collect();
+    const ingredients = await ctx.db
+      .query("ingredients")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.profileId))
+      .collect();
     for (const ingredient of ingredients) {
       if (ingredient.storeId === args.id) {
         await ctx.db.patch(ingredient._id, { storeId: undefined });
