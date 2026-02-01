@@ -73,7 +73,7 @@ function NewDishPage() {
       name: name.trim(),
       items: Array.from(items.entries()).map(([ingredientId, { quantity }]) => ({
         ingredientId,
-        quantity: String(quantity),
+        quantity,
       })),
     });
     // Auto-add the new dish to the shopping list.

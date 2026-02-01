@@ -87,7 +87,7 @@ function EditDishPage() {
         const ingredientName = ingredientMap.get(item.ingredientId) || "Unknown";
         newItems.set(item.ingredientId, {
           name: ingredientName,
-          quantity: parseInt(item.quantity) || 1,
+          quantity: item.quantity,
         });
       }
       setItems(newItems);
@@ -109,7 +109,7 @@ function EditDishPage() {
       name: name.trim(),
       items: Array.from(items.entries()).map(([ingredientId, { quantity }]) => ({
         ingredientId,
-        quantity: String(quantity),
+        quantity,
       })),
     });
     toast.success("Dish updated");

@@ -86,7 +86,7 @@ function DishCard({
     name: string;
     items: Array<{
       ingredientId: string;
-      quantity: string;
+      quantity: number;
       ingredient?: { name: string } | undefined;
     }>;
   };

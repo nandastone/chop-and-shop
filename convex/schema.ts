@@ -25,7 +25,7 @@ export default defineSchema({
     items: v.array(
       v.object({
         ingredientId: v.id("ingredients"),
-        quantity: v.string(),
+        quantity: v.number(),
       })
     ),
   }).index("by_profile", ["profileId"]).index("by_name", ["name"]),

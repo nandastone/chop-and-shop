@@ -115,8 +115,10 @@ export const getAggregated = query({
         const ingredient = ingredientMap.get(item.ingredientId);
         if (!ingredient) continue;
 
+        const totalForDish = item.quantity * count;
+
         if (existing) {
-          existing.totalCount += count;
+          existing.totalCount += totalForDish;
           for (let i = 0; i < count; i++) {
             existing.quantities.push(item.quantity);
           }
@@ -127,7 +129,7 @@ export const getAggregated = query({
           aggregated.set(item.ingredientId, {
             ingredientId: item.ingredientId,
             ingredient,
-            totalCount: count,
+            totalCount: totalForDish,
             quantities: Array(count).fill(item.quantity),
             fromDishes: [dish.name],
             manualQuantity: 0,

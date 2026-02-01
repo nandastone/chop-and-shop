@@ -11,6 +11,7 @@
 import type * as dishes from "../dishes.js";
 import type * as ingredients from "../ingredients.js";
 import type * as migrations_addProfileToExisting from "../migrations/addProfileToExisting.js";
+import type * as migrations_quantityStringToNumber from "../migrations/quantityStringToNumber.js";
 import type * as shoppingList from "../shoppingList.js";
 import type * as stores from "../stores.js";
 
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   dishes: typeof dishes;
   ingredients: typeof ingredients;
   "migrations/addProfileToExisting": typeof migrations_addProfileToExisting;
+  "migrations/quantityStringToNumber": typeof migrations_quantityStringToNumber;
   shoppingList: typeof shoppingList;
   stores: typeof stores;
 }>;
