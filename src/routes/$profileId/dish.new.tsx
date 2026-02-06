@@ -3,11 +3,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../convex/_generated/api";
-import { ArrowLeft, Search, Package, X, Plus } from "lucide-react";
+import { ArrowLeft, Search, Package, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useProfileId } from "~/contexts/ProfileContext";
+import { IngredientCard } from "~/components/IngredientCard";
 
 export const Route = createFileRoute("/$profileId/dish/new")({
   component: NewDishPage,
@@ -93,9 +94,15 @@ function NewDishPage() {
     setItems(newItems);
   };
 
-  const handleClearIngredient = (ingredientId: Id<"ingredients">) => {
+  const handleDecrementIngredient = (ingredientId: Id<"ingredients">) => {
+    const existing = items.get(ingredientId);
+    if (!existing) return;
     const newItems = new Map(items);
-    newItems.delete(ingredientId);
+    if (existing.quantity <= 1) {
+      newItems.delete(ingredientId);
+    } else {
+      newItems.set(ingredientId, { ...existing, quantity: existing.quantity - 1 });
+    }
     setItems(newItems);
   };
 
@@ -190,61 +197,15 @@ function NewDishPage() {
             {filteredIngredients.map((ingredient) => {
               const selected = items.get(ingredient._id);
               return (
-                <div key={ingredient._id} className="relative pt-1.5 px-1.5">
-                  {/* Quantity badge. */}
-                  {selected && (
-                    <div className="absolute top-0.5 right-1 w-5 h-5 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
-                      {selected.quantity}
-                    </div>
-                  )}
-
-                  {/* Clear button. */}
-                  {selected && (
-                    <button
-                      type="button"
-                      onClick={() => handleClearIngredient(ingredient._id)}
-                      className="absolute top-0.5 left-1 w-5 h-5 bg-stone-500 text-white rounded-full flex items-center justify-center shadow hover:bg-red-500 z-10"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleTapIngredient(ingredient._id, ingredient.name)
-                    }
-                    className={`w-full h-full flex flex-col items-center p-2 rounded-xl transition-all border-2 ${
-                      selected
-                        ? "bg-coral-100 border-coral-500"
-                        : "bg-white border-stone-200 hover:border-coral-300"
-                    }`}
-                  >
-                    {/* Photo placeholder. */}
-                    <div
-                      className={`w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 ${
-                        selected
-                          ? "bg-coral-200"
-                          : "bg-gradient-to-br from-coral-100 to-warm-200"
-                      }`}
-                    >
-                      <Package
-                        className={`w-4 h-4 ${
-                          selected ? "text-coral-500" : "text-coral-300"
-                        }`}
-                      />
-                    </div>
-
-                    {/* Name. */}
-                    <span
-                      className={`text-[11px] font-medium text-center truncate w-full ${
-                        selected ? "text-coral-700" : "text-stone-700"
-                      }`}
-                    >
-                      {ingredient.name}
-                    </span>
-                  </button>
-                </div>
+                <IngredientCard
+                  key={ingredient._id}
+                  name={ingredient.name}
+                  quantity={selected?.quantity || 0}
+                  onIncrement={() =>
+                    handleTapIngredient(ingredient._id, ingredient.name)
+                  }
+                  onDecrement={() => handleDecrementIngredient(ingredient._id)}
+                />
               );
             })}
           </div>

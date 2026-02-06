@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useProfileId } from "~/contexts/ProfileContext";
+import { IngredientCard } from "~/components/IngredientCard";
 
 export const Route = createFileRoute("/$profileId/ingredients")({
   component: IngredientsPage,
@@ -33,6 +34,7 @@ function IngredientsPage() {
   const updateIngredient = useMutation(api.ingredients.update);
   const deleteIngredient = useMutation(api.ingredients.remove);
   const addToList = useMutation(api.shoppingList.addManualIngredient);
+  const setQuantity = useMutation(api.shoppingList.setManualIngredientQuantity);
 
   const [search, setSearch] = useState("");
 
@@ -251,55 +253,38 @@ function IngredientsPage() {
         <div className="grid grid-cols-3 gap-0.5">
           {filteredIngredients.map((ingredient) => {
             const inListQuantity = manualQuantities.get(ingredient._id) || 0;
-            const isInList = inListQuantity > 0;
             return (
-              <div key={ingredient._id} className="relative pt-1.5 px-1.5">
-                {/* Quantity badge. */}
-                {isInList && (
-                  <div className="absolute top-0.5 right-1 w-5 h-5 bg-coral-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow z-10">
-                    {inListQuantity}
-                  </div>
-                )}
-
-                {/* Edit button. */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingIngredient({
-                      id: ingredient._id,
-                      name: ingredient.name,
-                      storeId: ingredient.storeId,
-                    });
-                  }}
-                  className="absolute top-0.5 left-1 w-5 h-5 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 z-10"
-                >
-                  <Pencil className="w-2.5 h-2.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    addToList({ profileId, ingredientId: ingredient._id });
-                    toast.success(`"${ingredient.name}" added to list`);
-                  }}
-                  className="w-full h-full flex flex-col items-center p-2 rounded-xl transition-all shadow-sm bg-white"
-                >
-                  {/* Photo placeholder. */}
-                  <div
-                    className="w-9 h-9 rounded-lg mb-1 flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-coral-100 to-warm-200"
+              <IngredientCard
+                key={ingredient._id}
+                name={ingredient.name}
+                quantity={inListQuantity}
+                onIncrement={() =>
+                  addToList({ profileId, ingredientId: ingredient._id })
+                }
+                onDecrement={() =>
+                  setQuantity({
+                    profileId,
+                    ingredientId: ingredient._id,
+                    quantity: inListQuantity - 1,
+                  })
+                }
+                overlay={
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingIngredient({
+                        id: ingredient._id,
+                        name: ingredient.name,
+                        storeId: ingredient.storeId,
+                      });
+                    }}
+                    className="absolute top-0.5 left-1 w-5 h-5 bg-stone-400 text-white rounded-full flex items-center justify-center shadow hover:bg-stone-600 z-10"
                   >
-                    <Package className="w-4 h-4 text-coral-300" />
-                  </div>
-
-                  {/* Name. */}
-                  <span
-                    className="text-[11px] font-medium text-center truncate w-full text-stone-700"
-                  >
-                    {ingredient.name}
-                  </span>
-                </button>
-              </div>
+                    <Pencil className="w-2.5 h-2.5" />
+                  </button>
+                }
+              />
             );
           })}
         </div>
