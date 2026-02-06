@@ -39,22 +39,16 @@ function EditDishPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newIngredientName, setNewIngredientName] = useState("");
   const [newIngredientStore, setNewIngredientStore] = useState<string>("");
-  const [ingredientError, setIngredientError] = useState("");
+  // Real-time duplicate detection.
+  const ingredientDuplicate = newIngredientName.trim()
+    ? allIngredients.find(
+        (i) => i.name.toLowerCase() === newIngredientName.trim().toLowerCase()
+      )
+    : null;
 
   const handleCreateIngredient = async () => {
-    if (!newIngredientName.trim()) return;
-    setIngredientError("");
+    if (!newIngredientName.trim() || ingredientDuplicate) return;
     const ingredientName = newIngredientName.trim();
-
-    // Client-side duplicate check.
-    const nameLower = ingredientName.toLowerCase();
-    const duplicate = allIngredients.find(
-      (i) => i.name.toLowerCase() === nameLower
-    );
-    if (duplicate) {
-      setIngredientError(`"${duplicate.name}" already exists`);
-      return;
-    }
 
     const newId = await createIngredient({
       profileId,
@@ -354,7 +348,7 @@ function EditDishPage() {
                 New Ingredient
               </h2>
               <button
-                onClick={() => { setShowAddModal(false); setIngredientError(""); }}
+                onClick={() => setShowAddModal(false)}
                 className="p-1 rounded-lg hover:bg-stone-100"
               >
                 <X className="w-5 h-5 text-stone-400" />
@@ -369,13 +363,13 @@ function EditDishPage() {
               <input
                 type="text"
                 value={newIngredientName}
-                onChange={(e) => { setNewIngredientName(e.target.value); setIngredientError(""); }}
+                onChange={(e) => setNewIngredientName(e.target.value)}
                 placeholder="Ingredient name"
-                className={`input mb-3 ${ingredientError ? "border-red-500" : ""}`}
+                className={`input mb-3 ${ingredientDuplicate ? "border-red-500" : ""}`}
                 autoFocus
               />
-              {ingredientError && (
-                <p className="text-red-500 text-sm mb-3 -mt-2">{ingredientError}</p>
+              {ingredientDuplicate && (
+                <p className="text-red-500 text-sm mb-3 -mt-2">"{ingredientDuplicate.name}" already exists silly billy</p>
               )}
               <select
                 value={newIngredientStore}
@@ -392,14 +386,14 @@ function EditDishPage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => { setShowAddModal(false); setIngredientError(""); }}
+                  onClick={() => setShowAddModal(false)}
                   className="flex-1 btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!newIngredientName.trim()}
+                  disabled={!newIngredientName.trim() || !!ingredientDuplicate}
                   className="flex-1 btn-primary"
                 >
                   Create

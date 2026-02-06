@@ -69,8 +69,22 @@ function IngredientsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<Id<"ingredients"> | null>(
     null
   );
-  const [createError, setCreateError] = useState("");
-  const [editError, setEditError] = useState("");
+  // Real-time duplicate detection for add modal.
+  const createDuplicate = newName.trim()
+    ? ingredients.find(
+        (i) => i.name.toLowerCase() === newName.trim().toLowerCase()
+      )
+    : null;
+
+  // Real-time duplicate detection for edit modal (excluding self).
+  const editDuplicate =
+    editingIngredient && editingIngredient.name.trim()
+      ? ingredients.find(
+          (i) =>
+            i._id !== editingIngredient.id &&
+            i.name.toLowerCase() === editingIngredient.name.trim().toLowerCase()
+        )
+      : null;
 
   // Build a map of manual ingredient quantities.
   const manualQuantities = new Map<Id<"ingredients">, number>(
@@ -104,18 +118,7 @@ function IngredientsPage() {
   }
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
-    setCreateError("");
-
-    // Client-side duplicate check.
-    const nameLower = newName.trim().toLowerCase();
-    const duplicate = ingredients.find(
-      (i) => i.name.toLowerCase() === nameLower
-    );
-    if (duplicate) {
-      setCreateError(`"${duplicate.name}" already exists`);
-      return;
-    }
+    if (!newName.trim() || createDuplicate) return;
 
     await createIngredient({
       profileId,
@@ -129,18 +132,7 @@ function IngredientsPage() {
   };
 
   const handleUpdate = async () => {
-    if (!editingIngredient || !editingIngredient.name.trim()) return;
-    setEditError("");
-
-    // Client-side duplicate check (excluding self).
-    const nameLower = editingIngredient.name.trim().toLowerCase();
-    const duplicate = ingredients.find(
-      (i) => i._id !== editingIngredient.id && i.name.toLowerCase() === nameLower
-    );
-    if (duplicate) {
-      setEditError(`"${duplicate.name}" already exists`);
-      return;
-    }
+    if (!editingIngredient || !editingIngredient.name.trim() || editDuplicate) return;
 
     await updateIngredient({
       profileId,
@@ -315,7 +307,7 @@ function IngredientsPage() {
 
       {/* Add modal. */}
       {showAddModal && (
-        <Modal onClose={() => { setShowAddModal(false); setCreateError(""); }} title="New Ingredient">
+        <Modal onClose={() => setShowAddModal(false)} title="New Ingredient">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -325,13 +317,13 @@ function IngredientsPage() {
             <input
               type="text"
               value={newName}
-              onChange={(e) => { setNewName(e.target.value); setCreateError(""); }}
+              onChange={(e) => setNewName(e.target.value)}
               placeholder="Ingredient name"
-              className={`input mb-3 ${createError ? "border-red-500" : ""}`}
+              className={`input mb-3 ${createDuplicate ? "border-red-500" : ""}`}
               autoFocus
             />
-            {createError && (
-              <p className="text-red-500 text-sm mb-3 -mt-2">{createError}</p>
+            {createDuplicate && (
+              <p className="text-red-500 text-sm mb-3 -mt-2">"{createDuplicate.name}" already exists silly billy</p>
             )}
             <select
               value={newStore}
@@ -348,14 +340,14 @@ function IngredientsPage() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => { setShowAddModal(false); setCreateError(""); }}
+                onClick={() => setShowAddModal(false)}
                 className="flex-1 btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={!newName.trim()}
+                disabled={!newName.trim() || !!createDuplicate}
                 className="flex-1 btn-primary"
               >
                 Create
@@ -368,7 +360,7 @@ function IngredientsPage() {
       {/* Edit modal. */}
       {editingIngredient && (
         <Modal
-          onClose={() => { setEditingIngredient(null); setEditError(""); }}
+          onClose={() => setEditingIngredient(null)}
           title="Edit Ingredient"
         >
           <form
@@ -380,16 +372,15 @@ function IngredientsPage() {
             <input
               type="text"
               value={editingIngredient.name}
-              onChange={(e) => {
-                setEditingIngredient({ ...editingIngredient, name: e.target.value });
-                setEditError("");
-              }}
+              onChange={(e) =>
+                setEditingIngredient({ ...editingIngredient, name: e.target.value })
+              }
               placeholder="Ingredient name"
-              className={`input mb-3 ${editError ? "border-red-500" : ""}`}
+              className={`input mb-3 ${editDuplicate ? "border-red-500" : ""}`}
               autoFocus
             />
-            {editError && (
-              <p className="text-red-500 text-sm mb-3 -mt-2">{editError}</p>
+            {editDuplicate && (
+              <p className="text-red-500 text-sm mb-3 -mt-2">"{editDuplicate.name}" already exists silly billy</p>
             )}
             <select
               value={editingIngredient.storeId || ""}
@@ -416,7 +407,6 @@ function IngredientsPage() {
                 onClick={() => {
                   setDeleteConfirm(editingIngredient.id);
                   setEditingIngredient(null);
-                  setEditError("");
                 }}
                 className="p-2.5 rounded-xl text-red-500 hover:bg-red-50"
               >
@@ -424,14 +414,14 @@ function IngredientsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => { setEditingIngredient(null); setEditError(""); }}
+                onClick={() => setEditingIngredient(null)}
                 className="flex-1 btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={!editingIngredient.name.trim()}
+                disabled={!editingIngredient.name.trim() || !!editDuplicate}
                 className="flex-1 btn-primary"
               >
                 Save
