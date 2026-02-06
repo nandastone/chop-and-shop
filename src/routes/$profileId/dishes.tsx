@@ -27,9 +27,9 @@ function DishesPage() {
     shoppingList.selectedDishes.map((d: { dishId: Id<"dishes">; count: number }) => [d.dishId, d.count])
   );
 
-  const filteredDishes = dishes.filter((dish) =>
-    dish.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredDishes = dishes
+    .filter((dish) => dish.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <main className="p-4">
