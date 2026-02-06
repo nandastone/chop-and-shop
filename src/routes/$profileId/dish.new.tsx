@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../convex/_generated/api";
-import { ArrowLeft, Search, Package, Plus } from "lucide-react";
+import { ArrowLeft, Search, Package, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -140,7 +140,7 @@ function NewDishPage() {
         />
       </div>
 
-      {/* Search + add + clear row. */}
+      {/* Search + add row. */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
@@ -149,8 +149,17 @@ function NewDishPage() {
             placeholder="Search ingredients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10"
+            className="input pl-10 pr-9"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-stone-200"
+            >
+              <X className="w-4 h-4 text-stone-400" />
+            </button>
+          )}
         </div>
         <button
           onClick={() => {
@@ -160,16 +169,8 @@ function NewDishPage() {
           className="px-3 rounded-xl bg-coral-500 text-white hover:bg-coral-600 text-sm font-medium flex items-center gap-1"
         >
           <Plus className="w-4 h-4" />
-          <span>Add</span>
+          <span>New</span>
         </button>
-        {items.size > 0 && (
-          <button
-            onClick={() => setItems(new Map())}
-            className="px-3 rounded-xl text-red-500 hover:bg-red-50 text-sm font-medium"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
       {/* Ingredient grid. */}

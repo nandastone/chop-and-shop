@@ -3,8 +3,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../convex/_generated/api";
-import { ArrowLeft, Search, Package, Trash2, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ArrowLeft, Search, Package, Trash2, Plus, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useProfileId } from "~/contexts/ProfileContext";
@@ -67,6 +67,9 @@ function EditDishPage() {
     setShowAddModal(false);
   };
 
+  // Track which ingredient IDs were originally in the dish so sections stay stable while editing.
+  const initialIngredientIds = useRef<Set<Id<"ingredients">> | null>(null);
+
   // Initialize form with dish data.
   useEffect(() => {
     if (dish) {
@@ -86,6 +89,7 @@ function EditDishPage() {
         });
       }
       setItems(newItems);
+      initialIngredientIds.current = new Set(dish.items.map((i) => i.ingredientId));
     }
   }, [dish, allIngredients]);
 
@@ -185,7 +189,7 @@ function EditDishPage() {
         />
       </div>
 
-      {/* Search + add + clear row. */}
+      {/* Search + add row. */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
@@ -194,8 +198,17 @@ function EditDishPage() {
             placeholder="Search ingredients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10"
+            className="input pl-10 pr-9"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-stone-200"
+            >
+              <X className="w-4 h-4 text-stone-400" />
+            </button>
+          )}
         </div>
         <button
           onClick={() => {
@@ -205,19 +218,11 @@ function EditDishPage() {
           className="px-3 rounded-xl bg-coral-500 text-white hover:bg-coral-600 text-sm font-medium flex items-center gap-1"
         >
           <Plus className="w-4 h-4" />
-          <span>Add</span>
+          <span>New</span>
         </button>
-        {items.size > 0 && (
-          <button
-            onClick={() => setItems(new Map())}
-            className="px-3 rounded-xl text-red-500 hover:bg-red-50 text-sm font-medium"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
-      {/* Ingredient grid. */}
+      {/* Ingredient sections — split by initial dish membership for stability. */}
       <div className="mb-6">
         {filteredIngredients.length === 0 ? (
           <div className="text-center py-8">
@@ -238,22 +243,67 @@ function EditDishPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-0.5">
-            {filteredIngredients.map((ingredient) => {
-              const selected = items.get(ingredient._id);
-              return (
-                <IngredientCard
-                  key={ingredient._id}
-                  name={ingredient.name}
-                  quantity={selected?.quantity || 0}
-                  onIncrement={() =>
-                    handleTapIngredient(ingredient._id, ingredient.name)
-                  }
-                  onDecrement={() => handleDecrementIngredient(ingredient._id)}
-                />
-              );
-            })}
-          </div>
+          (() => {
+            const dishIngredients = filteredIngredients.filter(
+              (ing) => initialIngredientIds.current?.has(ing._id)
+            );
+            const otherIngredients = filteredIngredients.filter(
+              (ing) => !initialIngredientIds.current?.has(ing._id)
+            );
+            return (
+              <>
+                {dishIngredients.length > 0 && (
+                  <>
+                    <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-2">
+                      In this dish
+                    </h3>
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {dishIngredients.map((ingredient) => {
+                        const selected = items.get(ingredient._id);
+                        return (
+                          <IngredientCard
+                            key={ingredient._id}
+                            name={ingredient.name}
+                            quantity={selected?.quantity || 0}
+                            onIncrement={() =>
+                              handleTapIngredient(ingredient._id, ingredient.name)
+                            }
+                            onDecrement={() => handleDecrementIngredient(ingredient._id)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {otherIngredients.length > 0 && (
+                  <>
+                    {dishIngredients.length > 0 && (
+                      <hr className="my-4 border-stone-200" />
+                    )}
+                    <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-2">
+                      Other ingredients
+                    </h3>
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {otherIngredients.map((ingredient) => {
+                        const selected = items.get(ingredient._id);
+                        return (
+                          <IngredientCard
+                            key={ingredient._id}
+                            name={ingredient.name}
+                            quantity={selected?.quantity || 0}
+                            onIncrement={() =>
+                              handleTapIngredient(ingredient._id, ingredient.name)
+                            }
+                            onDecrement={() => handleDecrementIngredient(ingredient._id)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            );
+          })()
         )}
       </div>
 
