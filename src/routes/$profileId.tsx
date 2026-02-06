@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   createFileRoute,
   Outlet,
@@ -6,6 +7,26 @@ import {
 } from "@tanstack/react-router";
 import { UtensilsCrossed, ShoppingCart, Store, Package } from "lucide-react";
 import { ProfileProvider } from "~/contexts/ProfileContext";
+
+// Detect when the virtual keyboard is open by comparing visual viewport to window height.
+function useIsKeyboardOpen() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const threshold = 100;
+    const onResize = () => {
+      setIsOpen(window.innerHeight - viewport.height > threshold);
+    };
+
+    viewport.addEventListener("resize", onResize);
+    return () => viewport.removeEventListener("resize", onResize);
+  }, []);
+
+  return isOpen;
+}
 
 export const Route = createFileRoute("/$profileId")({
   component: ProfileLayout,
@@ -24,6 +45,7 @@ function ProfileLayout() {
 
 function BottomNav({ profileId }: { profileId: string }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const keyboardOpen = useIsKeyboardOpen();
 
   const navItems = [
     { to: "/$profileId", icon: ShoppingCart, label: "List" },
@@ -31,6 +53,8 @@ function BottomNav({ profileId }: { profileId: string }) {
     { to: "/$profileId/ingredients", icon: Package, label: "Ingredients" },
     { to: "/$profileId/stores", icon: Store, label: "Stores" },
   ];
+
+  if (keyboardOpen) return null;
 
   return (
     <nav className="bottom-nav">
