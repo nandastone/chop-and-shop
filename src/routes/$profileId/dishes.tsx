@@ -97,10 +97,15 @@ function DishCard({
   const setDishCount = useMutation(api.shoppingList.setDishCount);
 
   const isInList = listCount > 0;
+  const [expanded, setExpanded] = useState(false);
+  const visibleLimit = 6;
 
   const handleCardClick = () => {
     addDish({ profileId, dishId: dish._id as Id<"dishes"> });
   };
+
+  const visibleItems = expanded ? dish.items : dish.items.slice(0, visibleLimit);
+  const hiddenCount = dish.items.length - visibleLimit;
 
   return (
     <div
@@ -129,23 +134,6 @@ function DishCard({
           <p className="text-sm text-stone-500">
             {dish.items.length} ingredient{dish.items.length !== 1 ? "s" : ""}
           </p>
-          {dish.items.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {dish.items.slice(0, 4).map((item, i) => (
-                <span
-                  key={i}
-                  className="text-xs bg-warm-100 text-stone-600 px-2 py-0.5 rounded-full"
-                >
-                  {item.ingredient?.name || "Unknown"}
-                </span>
-              ))}
-              {dish.items.length > 4 && (
-                <span className="text-xs text-stone-400">
-                  +{dish.items.length - 4} more
-                </span>
-              )}
-            </div>
-          )}
         </button>
 
         {/* Stepper. */}
@@ -189,6 +177,35 @@ function DishCard({
           )}
         </div>
       </div>
+
+      {/* Ingredient chips — full width. */}
+      {dish.items.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {visibleItems.map((item, i) => (
+            <span
+              key={i}
+              className={`text-xs px-2 py-0.5 rounded-full ${
+                isInList
+                  ? "bg-coral-200 text-coral-800"
+                  : "bg-warm-100 text-stone-600"
+              }`}
+            >
+              {item.ingredient?.name || "Unknown"}
+            </span>
+          ))}
+          {!expanded && hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className={`text-xs font-medium px-2 py-0.5 ${
+                isInList ? "text-coral-600" : "text-stone-400"
+              }`}
+            >
+              +{hiddenCount} more
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
